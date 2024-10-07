@@ -1,0 +1,2 @@
+ref_bodycell$_ from_real_user:MsgAddress ref_address:MsgAddress = RefBodyCell;
+swap#25938561 query_id:uint64 from_user:MsgAddress token_wallet:MsgAddress amount:Grams min_out:Grams ref_bodycell:(Either RefBodyCell ^RefBodyCell) = InternalMsgBody;

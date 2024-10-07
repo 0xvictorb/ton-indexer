@@ -1,14 +1,20 @@
 {
-  "name": "ton-indexer",
-  "module": "index.ts",
-  "type": "module",
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "convex": "^1.16.3"
-  }
+	"name": "ton-indexer",
+	"module": "index.ts",
+	"type": "module",
+	"scripts": {
+		"generate-tlb": "bun run scripts/generate-tlb.ts"
+	},
+	"devDependencies": {
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"@ton-community/tlb-codegen": "^1.1.0",
+		"@ton/core": "^0.58.1",
+		"convex": "^1.16.3",
+		"ton-lite-client": "^3.0.0"
+	}
 }
