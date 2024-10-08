@@ -1,6 +1,6 @@
-import { query } from "./_generated/server";
+import { internalQuery } from "./_generated/server";
 
-export const getWatchAddresses = query({
+export const getWatchAddresses = internalQuery({
   args: {},
   handler: async (ctx) => {
     const watchAddresses = await ctx.db

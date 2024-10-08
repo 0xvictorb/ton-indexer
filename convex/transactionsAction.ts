@@ -1,7 +1,7 @@
 'use node';
 
 import { internalAction, type ActionCtx } from './_generated/server';
-import { api } from './_generated/api';
+import { api, internal } from './_generated/api';
 import { Address, Cell, type Transaction, loadTransaction } from '@ton/core';
 import _ from 'lodash-es';
 import type { BlockID } from "ton-lite-client";
@@ -87,7 +87,7 @@ export const processStonFiRouter = async (ctx: ActionCtx, { address, block }: { 
           payload: transformObject(payload),
         };
 
-        await ctx.runMutation(api.transactions.saveTransaction, transaction);
+        await ctx.runMutation(internal.transactions.saveTransaction, transaction);
       }
     }
   };
@@ -146,7 +146,7 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
           payload: transformObject(payload),
         };
 
-        await ctx.runMutation(api.transactions.saveTransaction, transaction);
+        await ctx.runMutation(internal.transactions.saveTransaction, transaction);
       }
     }
   }
@@ -206,7 +206,7 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
           payload: transformObject(payload),
         };
 
-        await ctx.runMutation(api.transactions.saveTransaction, transaction);
+        await ctx.runMutation(internal.transactions.saveTransaction, transaction);
       }
     }
   }
@@ -215,7 +215,7 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
 export const parseBlockTransactions = internalAction({
   handler: async (ctx) => {
     const { last: lastBlock } = await tonClient.getMasterchainInfo();
-    const watchAddresses = await ctx.runQuery(api.watchAddresses.getWatchAddresses, {});
+    const watchAddresses = await ctx.runQuery(internal.watchAddresses.getWatchAddresses, {});
 
     const processingTasks = watchAddresses.map(watchAddress => {
       switch (watchAddress.contractName) {

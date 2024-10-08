@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, internalQuery, query } from "./_generated/server";
 
-export const get = query({
+export const get = internalQuery({
   args: {
     hash: v.string(),
   },
@@ -11,7 +11,7 @@ export const get = query({
   },
 });
 
-export const getTransactionsByDex = query({
+export const getTransactionsByContractName = query({
   args: {
     contractName: v.union(v.literal("stonfi"), v.literal("dedust"), v.literal("utyab")),
   },
@@ -21,7 +21,7 @@ export const getTransactionsByDex = query({
   },
 });
 
-export const saveTransaction = mutation({
+export const saveTransaction = internalMutation({
   args: {
     hash: v.string(),
     block: v.number(),
