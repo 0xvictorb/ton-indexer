@@ -11,6 +11,16 @@ export const get = query({
   },
 });
 
+export const getTransactionsByDex = query({
+  args: {
+    dex: v.union(v.literal("stonfi"), v.literal("dedust"), v.literal("utyab")),
+  },
+  handler: async (ctx, args) => {
+    const transactions = await ctx.db.query("transactions").filter((q) => q.eq(q.field("dex"), args.dex)).collect();
+    return transactions;
+  },
+});
+
 export const saveTransaction = mutation({
   args: {
     hash: v.string(),
