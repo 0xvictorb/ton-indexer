@@ -13,10 +13,10 @@ export const get = query({
 
 export const getTransactionsByDex = query({
   args: {
-    dex: v.union(v.literal("stonfi"), v.literal("dedust"), v.literal("utyab")),
+    contractName: v.union(v.literal("stonfi"), v.literal("dedust"), v.literal("utyab")),
   },
   handler: async (ctx, args) => {
-    const transactions = await ctx.db.query("transactions").filter((q) => q.eq(q.field("dex"), args.dex)).collect();
+    const transactions = await ctx.db.query("transactions").filter((q) => q.eq(q.field("contractName"), args.contractName)).collect();
     return transactions;
   },
 });
@@ -26,7 +26,7 @@ export const saveTransaction = mutation({
     hash: v.string(),
     block: v.number(),
     timestamp: v.number(),
-    dex: v.union(v.literal("stonfi"), v.literal("dedust"), v.literal("utyab")),
+    contractName: v.union(v.literal("stonfi"), v.literal("dedust"), v.literal("utyab")),
     from: v.string(),
     to: v.optional(v.string()),
     payload: v.any(),
@@ -42,7 +42,7 @@ export const saveTransaction = mutation({
       hash: args.hash,
       block: args.block,
       timestamp: args.timestamp,
-      dex: args.dex,
+      contractName: args.contractName,
       from: args.from,
       to: args.to,
       payload: args.payload,

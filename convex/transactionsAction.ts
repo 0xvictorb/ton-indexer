@@ -81,7 +81,7 @@ export const processStonFiRouter = async (ctx: ActionCtx, { address, block }: { 
           hash: trx.hash().toString('hex'),
           block: block.seqno,
           timestamp: trx.now,
-          dex: 'stonfi' as const,
+          contractName: 'stonfi' as const,
           from: sender.toString(),
           to: inMessage.info.dest?.toString(),
           payload: transformObject(payload),
@@ -140,7 +140,7 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
           hash: trx.hash().toString('hex'),
           block: block.seqno,
           timestamp: trx.now,
-          dex: 'dedust' as const,
+          contractName: 'dedust' as const,
           from: sender.toString(),
           to: inMessage.info.dest?.toString(),
           payload: transformObject(payload),
@@ -200,7 +200,7 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
           hash: trx.hash().toString('hex'),
           block: block.seqno,
           timestamp: trx.now,
-          dex: 'utyab' as const,
+          contractName: 'utyab' as const,
           from: sender.toString(),
           to: inMessage.info.dest?.toString(),
           payload: transformObject(payload),
@@ -218,7 +218,7 @@ export const parseBlockTransactions = internalAction({
     const watchAddresses = await ctx.runQuery(api.watchAddresses.getWatchAddresses, {});
 
     const processingTasks = watchAddresses.map(watchAddress => {
-      switch (watchAddress.dex) {
+      switch (watchAddress.contractName) {
         case 'stonfi':
           return processStonFiRouter(ctx, {
             address: watchAddress.address,

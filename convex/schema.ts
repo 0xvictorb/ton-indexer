@@ -6,7 +6,7 @@ export default defineSchema({
         hash: v.string(),
         block: v.number(),
         timestamp: v.number(),
-        dex: v.union(v.literal('stonfi'), v.literal('dedust'), v.literal('utyab')),
+        contractName: v.union(v.literal('stonfi'), v.literal('dedust'), v.literal('utyab')),
         from: v.string(),
         to: v.optional(v.string()),
         payload: v.any(),
@@ -19,6 +19,6 @@ export default defineSchema({
     watchAddresses: defineTable({
         address: v.string(),
         name: v.string(),
-        dex: v.union(v.literal('stonfi'), v.literal('dedust'), v.literal('utyab')),
+        contractName: v.union(v.literal('stonfi'), v.literal('dedust'), v.literal('utyab')),
     }),
 });
