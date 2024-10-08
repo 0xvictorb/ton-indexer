@@ -152,6 +152,66 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
   }
 ;
 
+export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { address: string, block: BlockID }) => {
+    const accountState = await tonClient.getAccountState(Address.parse(address), block);
+    const ltState = accountState.lastTx!.lt.toString();
+    const hashState = Buffer.from(accountState.lastTx!.hash.toString(16).padStart(64, '0'), 'hex');
+
+    const transactionsRaw = await tonClient.getAccountTransactions(
+      Address.parse(address),
+      ltState,
+      hashState, 100);
+
+    const transactions: Transaction[] = [];
+    for (const trx of Cell.fromBoc(transactionsRaw.transactions)) {
+      transactions.push(loadTransaction(trx.beginParse()));
+    }
+
+    for (const trx of transactions) {
+      const inMessage = trx.inMessage;
+      if (!inMessage) {
+        continue;
+      }
+
+      const sender = inMessage.info.src;
+      if (!(sender instanceof Address)) {
+        continue;
+      }
+
+      const cellInMessage = inMessage.body;
+      if (cellInMessage === undefined) {
+        continue;
+      }
+
+      const outMessages = trx.outMessages.values();
+
+      for (const outMessage of outMessages) {
+        const slice = outMessage.body.beginParse();
+
+        let payload: ExtOutMsgBody;
+        try {
+          payload = loadExtOutMsgBody(slice);
+        } catch (error) {
+          console.log('SKIP: not a swap event', trx.hash().toString('hex'));
+          continue;
+        }
+
+        const transaction = {
+          hash: trx.hash().toString('hex'),
+          block: block.seqno,
+          timestamp: trx.now,
+          dex: 'utyab' as const,
+          from: sender.toString(),
+          to: inMessage.info.dest?.toString(),
+          payload: transformObject(payload),
+        };
+
+        await ctx.runMutation(api.transactions.saveTransaction, transaction);
+      }
+    }
+  }
+;
+
 export const parseBlockTransactions = internalAction({
   handler: async (ctx) => {
     const { last: lastBlock } = await tonClient.getMasterchainInfo();
@@ -170,8 +230,10 @@ export const parseBlockTransactions = internalAction({
             block: lastBlock
           });
         case 'utyab':
-          // TODO: Implement Utyab processing
-          return Promise.resolve(); // Placeholder for now
+          return processUtyabPool(ctx, {
+            address: watchAddress.address,
+            block: lastBlock
+          });
         default:
           return Promise.resolve(); // Handle unknown dex types
       }
