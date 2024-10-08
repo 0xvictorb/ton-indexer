@@ -16,19 +16,8 @@ export const getTransactionsByDex = query({
     dex: v.union(v.literal("stonfi"), v.literal("dedust"), v.literal("utyab")),
   },
   handler: async (ctx, args) => {
-    const transactions = await ctx.db.query("transactions").filter((q) => q.eq(q.field("dex"), args.dex)).filter((q) => q.eq(q.field("processed"), false)).collect();
+    const transactions = await ctx.db.query("transactions").filter((q) => q.eq(q.field("dex"), args.dex)).collect();
     return transactions;
-  },
-});
-
-export const markAsProcessed = mutation({
-  args: {
-    id: v.id("transactions"),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.id, {
-      processed: true,
-    });
   },
 });
 

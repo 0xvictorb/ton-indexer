@@ -10,7 +10,6 @@ export default defineSchema({
         from: v.string(),
         to: v.optional(v.string()),
         payload: v.any(),
-        processed: v.optional(v.boolean()),
     })
         .index('by_block', ['block'])
         .index('by_timestamp', ['timestamp'])
