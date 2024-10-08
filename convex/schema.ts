@@ -12,6 +12,7 @@ export default defineSchema({
         payload: v.any(),
     })
         .index('by_hash', ['hash'])
+        .index('by_contractName', ['contractName'])
         .index('by_block', ['block'])
         .index('by_timestamp', ['timestamp'])
         .index('by_from', ['from'])

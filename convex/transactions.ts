@@ -22,7 +22,7 @@ export const getTransactionsByContractName = query({
       throw new ConvexError("Unauthorized");
     }
 
-    const transactions = await ctx.db.query("transactions").filter((q) => q.eq(q.field("contractName"), args.contractName)).collect();
+    const transactions = await ctx.db.query("transactions").withIndex("by_contractName", (q) => q.eq('contractName', args.contractName)).collect();
     return transactions;
   },
 });
