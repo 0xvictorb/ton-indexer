@@ -1,4 +1,4 @@
-import { tonLiteClient } from "./ton-lite-client";
+import { tonLiteClient } from "./ton-client";
 import { Address, Cell, type Transaction, loadTransaction } from "@ton/core";
 import watchAddresses from "./config/watchAddresses";
 import { loadInternalMsgBody, type InternalMsgBody } from "./abi/stonfi";

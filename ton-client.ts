@@ -37,4 +37,4 @@ function createTONLiteClient() {
   return new LiteClient({ engine });
 }
 
-export const tonLiteClient = createTONLiteClient();
+export const tonClient = createTONLiteClient();

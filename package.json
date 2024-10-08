@@ -16,7 +16,8 @@
 		"@ton-community/tlb-codegen": "^1.1.0",
 		"@ton/core": "^0.58.1",
 		"@ton/ton": "^15.0.0",
-		"convex": "^1.16.3",
+		"convex": "^1.16.4",
+		"convex-helpers": "^0.1.59",
 		"lodash-es": "^4.17.21",
 		"ton-lite-client": "^3.0.0"
 	}
