@@ -1,4 +1,4 @@
-import { tonLiteClient } from "./ton-client";
+import { tonClient } from "./ton-client";
 import { Address, Cell, type Transaction, loadTransaction } from "@ton/core";
 import watchAddresses from "./config/watchAddresses";
 import { loadInternalMsgBody, type InternalMsgBody } from "./abi/stonfi";
@@ -11,11 +11,11 @@ function padString(input: string) {
 }
 
 async function processStonfi(block: BlockID) {
-    const accountState = await tonLiteClient.getAccountState(Address.parse(watchAddresses.stonfi.address), block);
+    const accountState = await tonClient.getAccountState(Address.parse(watchAddresses.stonfi.address), block);
     const ltState = accountState.lastTx!.lt.toString();
     const hashState = Buffer.from(padString(accountState.lastTx!.hash.toString(16)), 'hex');
 
-    const transactionsRaw = await tonLiteClient.getAccountTransactions(
+    const transactionsRaw = await tonClient.getAccountTransactions(
         Address.parse(watchAddresses.stonfi.address),
         ltState,
         hashState,
@@ -64,11 +64,11 @@ async function processStonfi(block: BlockID) {
 }
 
 async function processDedustTON_USDT(block: BlockID) {
-    const accountState = await tonLiteClient.getAccountState(Address.parse(watchAddresses.dedustTON_USDT.address), block);
+    const accountState = await tonClient.getAccountState(Address.parse(watchAddresses.dedustTON_USDT.address), block);
     const ltState = accountState.lastTx!.lt.toString();
     const hashState = Buffer.from(padString(accountState.lastTx!.hash.toString(16)), 'hex');
 
-    const transactionsRaw = await tonLiteClient.getAccountTransactions(
+    const transactionsRaw = await tonClient.getAccountTransactions(
         Address.parse(watchAddresses.dedustTON_USDT.address),
         ltState,
         hashState, 100);
@@ -118,7 +118,7 @@ async function processDedustTON_USDT(block: BlockID) {
 async function main() {
   console.log('Watch addresses loaded:', watchAddresses);
 
-  const { last } = await tonLiteClient.getMasterchainInfo();
+  const { last } = await tonClient.getMasterchainInfo();
 
   const blockNumber = last.seqno;
   console.log('Block number:', blockNumber);
