@@ -1,2 +1,10 @@
+transfer_notification#7362d09c query_id:uint64 jetton_amount:Grams from_user:MsgAddress ref_msg_data:^DexPayload = InternalMsgBody;
+
+swap_op#25938561 = SwapOP;
+swap$_ transferred_op:SwapOP token_wallet1:MsgAddress min_out:Grams to_address:MsgAddress ref_address:(Either MsgAddress MsgAddress) = DexPayload;
+
+provide_lp_op#fcf9e58f = ProvideLpOP;
+provide_lp$_ transferred_op:ProvideLpOP token_wallet1:MsgAddress min_lp_out:Grams = DexPayload;
+
 ref_bodycell$_ from_real_user:MsgAddress ref_address:MsgAddress = RefBodyCell;
 swap#25938561 query_id:uint64 from_user:MsgAddress token_wallet:MsgAddress amount:Grams min_out:Grams ref_bodycell:(Either RefBodyCell ^RefBodyCell) = InternalMsgBody;

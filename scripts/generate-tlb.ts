@@ -9,7 +9,7 @@ if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
 
-const referenceComment = '/// <reference path="../global.d.ts" />\n\nimport { loadEither, storeEither } from "./helper";\n\n';
+const referenceComment = '/// <reference path="../global.d.ts" />\n\nimport { loadEither, storeEither, Coins, Maybe , loadCoins, loadMaybe, storeMaybe, storeCoins } from "./helper";\n\n';
 
 function addReferenceToFile(filePath: string) {
   let content = '';
