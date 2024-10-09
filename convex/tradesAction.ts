@@ -6,9 +6,10 @@ import { Address, Cell, type Transaction, loadTransaction } from '@ton/core';
 import _ from 'lodash-es';
 import type { BlockID } from "ton-lite-client";
 import { loadInternalMsgBody, type InternalMsgBody_swap, type InternalMsgBody_pay_to } from '@/abi/stonfi';
-import { loadExtOutMsgBody, type ExtOutMsgBody_swap } from '@/abi/dedust';
+import { loadExtOutMsgBody, type ExtOutMsgBody } from '@/abi/dedust';
 import { loadInMsgBody as loadInMsgBodyUtyab, type InMsgBody as InMsgBodyUtyab } from '@/abi/utyab';
 import { tonClient } from '@/ton-client';
+import { JettonWallet } from '@ton/ton';
 
 const TON_ADDRESS = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c';
 
@@ -48,8 +49,11 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
         const sender = inMessage.info.src;
 
         const outMessages = trx.outMessages.values();
-        const swapMessage = _.nth(outMessages, 0);
-        const paymentMessage = _.nth(outMessages, 3);
+        const swapMessage = inMessage;
+        const paymentMessage = _.nth(outMessages, 1);
+
+        console.log('have swapMessage', !!swapMessage);
+        console.log('have paymentMessage', !!paymentMessage);
 
         if (swapMessage && paymentMessage) {
             const sliceSwap = swapMessage.body.beginParse();
@@ -66,16 +70,22 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
                 continue;
             }
 
-            const token0Address = payloadPayment.ref_coins_data.token0_address?.toString();
-            const token1Address = payloadPayment.ref_coins_data.token1_address?.toString();
-            const tokenInAddress = payloadSwap.token_wallet?.toString();
-            const tokenOutAddress = token0Address === tokenInAddress ? token1Address : token0Address;
-            const amountIn = payloadSwap.amount.toString();
-            const amountOut = tokenOutAddress === token0Address ? payloadPayment.ref_coins_data.amount0_out.toString() : payloadPayment.ref_coins_data.amount1_out.toString();
+            const amount0Out = payloadPayment.ref_coins_data.amount0_out;
+            const amount1Out = payloadPayment.ref_coins_data.amount1_out;
 
-            const currentPoolInfo = await fetch(`https://api.stonfi.io/v1/pools/${address}`).then(res => res.json());
-            const reserveIn = Address.parse(currentPoolInfo.token0_address).toString() === tokenInAddress ? currentPoolInfo.reserve0 : currentPoolInfo.reserve1;
-            const reserveOut = Address.parse(currentPoolInfo.token0_address).toString() === tokenOutAddress ? currentPoolInfo.reserve0 : currentPoolInfo.reserve1;
+            let direction = 'in';
+            if (amount1Out === 0n) {
+                direction = 'out';
+            }
+
+            const amountIn = payloadSwap.amount.toString();
+            const amountOut = direction === 'in' ? amount1Out.toString() : amount0Out.toString();
+
+            const currentPoolInfo = await fetch(`https://api.ston.fi/v1/pools/${address}`).then(res => res.json());
+            const reserveIn = direction === 'in' ? currentPoolInfo.pool.reserve0 : currentPoolInfo.pool.reserve1;
+            const reserveOut = direction === 'in' ? currentPoolInfo.pool.reserve1 : currentPoolInfo.pool.reserve0;
+            const tokenInAddress = direction === 'in' ? currentPoolInfo.pool.token0_address : currentPoolInfo.pool.token1_address;
+            const tokenOutAddress = direction === 'in' ? currentPoolInfo.pool.token1_address : currentPoolInfo.pool.token0_address;
 
             const tradeTokenIn = tokenInAddress ? await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: tokenInAddress }) : null;
             const tradeTokenOut = tokenOutAddress ? await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: tokenOutAddress }) : null;
@@ -137,9 +147,9 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
         for (const outMessage of outMessages) {
             const slice = outMessage.body.beginParse();
 
-            let payload: ExtOutMsgBody_swap;
+            let payload: ExtOutMsgBody;
             try {
-                payload = loadExtOutMsgBody(slice) as ExtOutMsgBody_swap;
+                payload = loadExtOutMsgBody(slice) as ExtOutMsgBody;
             } catch (error) {
                 console.log('SKIP: not a swap event', trx.hash().toString('hex'));
                 continue;
@@ -271,11 +281,10 @@ export const parseBlockTransactions = internalAction({
                         block: lastBlock
                     });
                 case 'dedust':
-                    // return processDedustPool(ctx, {
-                    //     address: pool.address,
-                    //     block: lastBlock
-                    // });
-                    return Promise.resolve();
+                    return processDedustPool(ctx, {
+                        address: pool.address,
+                        block: lastBlock
+                    });
                 case 'utyab':
                     // return processUtyabPool(ctx, {
                     //     address: pool.address,
