@@ -271,10 +271,11 @@ export const parseBlockTransactions = internalAction({
                         block: lastBlock
                     });
                 case 'dedust':
-                    return processDedustPool(ctx, {
-                        address: pool.address,
-                        block: lastBlock
-                    });
+                    // return processDedustPool(ctx, {
+                    //     address: pool.address,
+                    //     block: lastBlock
+                    // });
+                    return Promise.resolve();
                 case 'utyab':
                     // return processUtyabPool(ctx, {
                     //     address: pool.address,

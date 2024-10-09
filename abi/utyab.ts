@@ -85,4 +85,3 @@ export function storeInMsgBody(inMsgBody: InMsgBody): (builder: Builder) => void
     })
 
 }
-

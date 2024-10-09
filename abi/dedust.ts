@@ -21,19 +21,7 @@ export function bitLen(n: number) {
 
 // swap#ea06185d query_id:uint64 amount:Coins _:SwapStep swap_params:^SwapParams = InMsgBody;
 
-/*
-deposit_liquidity#d55e4686 query_id:uint64 amount:Coins pool_params:PoolParams
-                           min_lp_amount:Coins
-                           asset0_target_balance:Coins asset1_target_balance:Coins
-                           fulfill_payload:(Maybe ^Cell)
-                           reject_payload:(Maybe ^Cell) = InMsgBody;
-*/
-
-// payout#474f86cf query_id:uint64 payload:(Maybe ^Cell) = InMsgBody;
-
-// cancel_deposit#166cedee query_id:uint64 payload:(Maybe ^Cell) = InMsgBody;
-
-export type InMsgBody = InMsgBody_create_vault | InMsgBody_create_volatile_pool | InMsgBody_swap | InMsgBody_deposit_liquidity | InMsgBody_payout | InMsgBody_cancel_deposit;
+export type InMsgBody = InMsgBody_create_vault | InMsgBody_create_volatile_pool | InMsgBody_swap;
 
 export interface InMsgBody_create_vault {
     readonly kind: 'InMsgBody_create_vault';
@@ -54,30 +42,6 @@ export interface InMsgBody_swap {
     readonly amount: Coins;
     readonly _: SwapStep;
     readonly swap_params: SwapParams;
-}
-
-export interface InMsgBody_deposit_liquidity {
-    readonly kind: 'InMsgBody_deposit_liquidity';
-    readonly query_id: number;
-    readonly amount: Coins;
-    readonly pool_params: PoolParams;
-    readonly min_lp_amount: Coins;
-    readonly asset0_target_balance: Coins;
-    readonly asset1_target_balance: Coins;
-    readonly fulfill_payload: Maybe<Cell>;
-    readonly reject_payload: Maybe<Cell>;
-}
-
-export interface InMsgBody_payout {
-    readonly kind: 'InMsgBody_payout';
-    readonly query_id: number;
-    readonly payload: Maybe<Cell>;
-}
-
-export interface InMsgBody_cancel_deposit {
-    readonly kind: 'InMsgBody_cancel_deposit';
-    readonly query_id: number;
-    readonly payload: Maybe<Cell>;
 }
 
 // native$0000 = Asset;
@@ -180,29 +144,10 @@ export interface PoolParams {
 
 // swap#e3a0d482 _:SwapStep swap_params:^SwapParams = ForwardPayload;
 
-/*
-deposit_liquidity#40e108d6 pool_params:PoolParams min_lp_amount:Coins
-                           asset0_target_balance:Coins asset1_target_balance:Coins
-                           fulfill_payload:(Maybe ^Cell)
-                           reject_payload:(Maybe ^Cell) = ForwardPayload;
-*/
-
-export type ForwardPayload = ForwardPayload_swap | ForwardPayload_deposit_liquidity;
-
-export interface ForwardPayload_swap {
-    readonly kind: 'ForwardPayload_swap';
+export interface ForwardPayload {
+    readonly kind: 'ForwardPayload';
     readonly _: SwapStep;
     readonly swap_params: SwapParams;
-}
-
-export interface ForwardPayload_deposit_liquidity {
-    readonly kind: 'ForwardPayload_deposit_liquidity';
-    readonly pool_params: PoolParams;
-    readonly min_lp_amount: Coins;
-    readonly asset0_target_balance: Coins;
-    readonly asset1_target_balance: Coins;
-    readonly fulfill_payload: Maybe<Cell>;
-    readonly reject_payload: Maybe<Cell>;
 }
 
 /*
@@ -211,21 +156,8 @@ swap#9c610de3 asset_in:Asset asset_out:Asset amount_in:Coins amount_out:Coins
               reserve0:Coins reserve1:Coins ] = ExtOutMsgBody;
 */
 
-/*
-deposit#b544f4a4 sender_addr:MsgAddressInt amount0:Coins amount1:Coins
-                 reserve0:Coins reserve1:Coins liquidity:Coins = ExtOutMsgBody;
-*/
-
-/*
-withdrawal#3aa870a6 sender_addr:MsgAddressInt liquidity:Coins
-                    amount0:Coins amount1:Coins
-                    reserve0:Coins reserve1:Coins = ExtOutMsgBody;
-*/
-
-export type ExtOutMsgBody = ExtOutMsgBody_swap | ExtOutMsgBody_deposit | ExtOutMsgBody_withdrawal;
-
-export interface ExtOutMsgBody_swap {
-    readonly kind: 'ExtOutMsgBody_swap';
+export interface ExtOutMsgBody {
+    readonly kind: 'ExtOutMsgBody';
     readonly asset_in: Asset;
     readonly asset_out: Asset;
     readonly amount_in: Coins;
@@ -236,43 +168,11 @@ export interface ExtOutMsgBody_swap {
     readonly reserve1: Coins;
 }
 
-export interface ExtOutMsgBody_deposit {
-    readonly kind: 'ExtOutMsgBody_deposit';
-    readonly sender_addr: Address;
-    readonly amount0: Coins;
-    readonly amount1: Coins;
-    readonly reserve0: Coins;
-    readonly reserve1: Coins;
-    readonly liquidity: Coins;
-}
-
-export interface ExtOutMsgBody_withdrawal {
-    readonly kind: 'ExtOutMsgBody_withdrawal';
-    readonly sender_addr: Address;
-    readonly liquidity: Coins;
-    readonly amount0: Coins;
-    readonly amount1: Coins;
-    readonly reserve0: Coins;
-    readonly reserve1: Coins;
-}
-
 // create_vault#21cfe02b query_id:uint64 asset:Asset = InMsgBody;
 
 // create_volatile_pool#97d51f2f query_id:uint64 asset0:Asset asset1:Asset = InMsgBody;
 
 // swap#ea06185d query_id:uint64 amount:Coins _:SwapStep swap_params:^SwapParams = InMsgBody;
-
-/*
-deposit_liquidity#d55e4686 query_id:uint64 amount:Coins pool_params:PoolParams
-                           min_lp_amount:Coins
-                           asset0_target_balance:Coins asset1_target_balance:Coins
-                           fulfill_payload:(Maybe ^Cell)
-                           reject_payload:(Maybe ^Cell) = InMsgBody;
-*/
-
-// payout#474f86cf query_id:uint64 payload:(Maybe ^Cell) = InMsgBody;
-
-// cancel_deposit#166cedee query_id:uint64 payload:(Maybe ^Cell) = InMsgBody;
 
 export function loadInMsgBody(slice: Slice): InMsgBody {
     if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0x21cfe02b))) {
@@ -315,68 +215,7 @@ export function loadInMsgBody(slice: Slice): InMsgBody {
         }
 
     }
-    if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0xd55e4686))) {
-        slice.loadUint(32);
-        let query_id: number = slice.loadUint(64);
-        let amount: Coins = loadCoins(slice);
-        let pool_params: PoolParams = loadPoolParams(slice);
-        let min_lp_amount: Coins = loadCoins(slice);
-        let asset0_target_balance: Coins = loadCoins(slice);
-        let asset1_target_balance: Coins = loadCoins(slice);
-        let fulfill_payload: Maybe<Cell> = loadMaybe<Cell>(slice, ((slice: Slice) => {
-            let slice1 = slice.loadRef().beginParse(true);
-            return slice1.asCell()
-
-        }));
-        let reject_payload: Maybe<Cell> = loadMaybe<Cell>(slice, ((slice: Slice) => {
-            let slice1 = slice.loadRef().beginParse(true);
-            return slice1.asCell()
-
-        }));
-        return {
-            kind: 'InMsgBody_deposit_liquidity',
-            query_id: query_id,
-            amount: amount,
-            pool_params: pool_params,
-            min_lp_amount: min_lp_amount,
-            asset0_target_balance: asset0_target_balance,
-            asset1_target_balance: asset1_target_balance,
-            fulfill_payload: fulfill_payload,
-            reject_payload: reject_payload,
-        }
-
-    }
-    if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0x474f86cf))) {
-        slice.loadUint(32);
-        let query_id: number = slice.loadUint(64);
-        let payload: Maybe<Cell> = loadMaybe<Cell>(slice, ((slice: Slice) => {
-            let slice1 = slice.loadRef().beginParse(true);
-            return slice1.asCell()
-
-        }));
-        return {
-            kind: 'InMsgBody_payout',
-            query_id: query_id,
-            payload: payload,
-        }
-
-    }
-    if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0x166cedee))) {
-        slice.loadUint(32);
-        let query_id: number = slice.loadUint(64);
-        let payload: Maybe<Cell> = loadMaybe<Cell>(slice, ((slice: Slice) => {
-            let slice1 = slice.loadRef().beginParse(true);
-            return slice1.asCell()
-
-        }));
-        return {
-            kind: 'InMsgBody_cancel_deposit',
-            query_id: query_id,
-            payload: payload,
-        }
-
-    }
-    throw new Error('Expected one of "InMsgBody_create_vault", "InMsgBody_create_volatile_pool", "InMsgBody_swap", "InMsgBody_deposit_liquidity", "InMsgBody_payout", "InMsgBody_cancel_deposit" in loading "InMsgBody", but data does not satisfy any constructor');
+    throw new Error('Expected one of "InMsgBody_create_vault", "InMsgBody_create_volatile_pool", "InMsgBody_swap" in loading "InMsgBody", but data does not satisfy any constructor');
 }
 
 export function storeInMsgBody(inMsgBody: InMsgBody): (builder: Builder) => void {
@@ -409,69 +248,7 @@ export function storeInMsgBody(inMsgBody: InMsgBody): (builder: Builder) => void
         })
 
     }
-    if ((inMsgBody.kind == 'InMsgBody_deposit_liquidity')) {
-        return ((builder: Builder) => {
-            builder.storeUint(0xd55e4686, 32);
-            builder.storeUint(inMsgBody.query_id, 64);
-            storeCoins(inMsgBody.amount)(builder);
-            storePoolParams(inMsgBody.pool_params)(builder);
-            storeCoins(inMsgBody.min_lp_amount)(builder);
-            storeCoins(inMsgBody.asset0_target_balance)(builder);
-            storeCoins(inMsgBody.asset1_target_balance)(builder);
-            storeMaybe<Cell>(inMsgBody.fulfill_payload, ((arg: Cell) => {
-                return ((builder: Builder) => {
-                    let cell1 = beginCell();
-                    cell1.storeSlice(arg.beginParse(true));
-                    builder.storeRef(cell1);
-
-                })
-
-            }))(builder);
-            storeMaybe<Cell>(inMsgBody.reject_payload, ((arg: Cell) => {
-                return ((builder: Builder) => {
-                    let cell1 = beginCell();
-                    cell1.storeSlice(arg.beginParse(true));
-                    builder.storeRef(cell1);
-
-                })
-
-            }))(builder);
-        })
-
-    }
-    if ((inMsgBody.kind == 'InMsgBody_payout')) {
-        return ((builder: Builder) => {
-            builder.storeUint(0x474f86cf, 32);
-            builder.storeUint(inMsgBody.query_id, 64);
-            storeMaybe<Cell>(inMsgBody.payload, ((arg: Cell) => {
-                return ((builder: Builder) => {
-                    let cell1 = beginCell();
-                    cell1.storeSlice(arg.beginParse(true));
-                    builder.storeRef(cell1);
-
-                })
-
-            }))(builder);
-        })
-
-    }
-    if ((inMsgBody.kind == 'InMsgBody_cancel_deposit')) {
-        return ((builder: Builder) => {
-            builder.storeUint(0x166cedee, 32);
-            builder.storeUint(inMsgBody.query_id, 64);
-            storeMaybe<Cell>(inMsgBody.payload, ((arg: Cell) => {
-                return ((builder: Builder) => {
-                    let cell1 = beginCell();
-                    cell1.storeSlice(arg.beginParse(true));
-                    builder.storeRef(cell1);
-
-                })
-
-            }))(builder);
-        })
-
-    }
-    throw new Error('Expected one of "InMsgBody_create_vault", "InMsgBody_create_volatile_pool", "InMsgBody_swap", "InMsgBody_deposit_liquidity", "InMsgBody_payout", "InMsgBody_cancel_deposit" in loading "InMsgBody", but data does not satisfy any constructor');
+    throw new Error('Expected one of "InMsgBody_create_vault", "InMsgBody_create_volatile_pool", "InMsgBody_swap" in loading "InMsgBody", but data does not satisfy any constructor');
 }
 
 // native$0000 = Asset;
@@ -770,13 +547,6 @@ export function storePoolParams(poolParams: PoolParams): (builder: Builder) => v
 
 // swap#e3a0d482 _:SwapStep swap_params:^SwapParams = ForwardPayload;
 
-/*
-deposit_liquidity#40e108d6 pool_params:PoolParams min_lp_amount:Coins
-                           asset0_target_balance:Coins asset1_target_balance:Coins
-                           fulfill_payload:(Maybe ^Cell)
-                           reject_payload:(Maybe ^Cell) = ForwardPayload;
-*/
-
 export function loadForwardPayload(slice: Slice): ForwardPayload {
     if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0xe3a0d482))) {
         slice.loadUint(32);
@@ -784,99 +554,30 @@ export function loadForwardPayload(slice: Slice): ForwardPayload {
         let slice1 = slice.loadRef().beginParse(true);
         let swap_params: SwapParams = loadSwapParams(slice1);
         return {
-            kind: 'ForwardPayload_swap',
+            kind: 'ForwardPayload',
             _: _,
             swap_params: swap_params,
         }
 
     }
-    if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0x40e108d6))) {
-        slice.loadUint(32);
-        let pool_params: PoolParams = loadPoolParams(slice);
-        let min_lp_amount: Coins = loadCoins(slice);
-        let asset0_target_balance: Coins = loadCoins(slice);
-        let asset1_target_balance: Coins = loadCoins(slice);
-        let fulfill_payload: Maybe<Cell> = loadMaybe<Cell>(slice, ((slice: Slice) => {
-            let slice1 = slice.loadRef().beginParse(true);
-            return slice1.asCell()
-
-        }));
-        let reject_payload: Maybe<Cell> = loadMaybe<Cell>(slice, ((slice: Slice) => {
-            let slice1 = slice.loadRef().beginParse(true);
-            return slice1.asCell()
-
-        }));
-        return {
-            kind: 'ForwardPayload_deposit_liquidity',
-            pool_params: pool_params,
-            min_lp_amount: min_lp_amount,
-            asset0_target_balance: asset0_target_balance,
-            asset1_target_balance: asset1_target_balance,
-            fulfill_payload: fulfill_payload,
-            reject_payload: reject_payload,
-        }
-
-    }
-    throw new Error('Expected one of "ForwardPayload_swap", "ForwardPayload_deposit_liquidity" in loading "ForwardPayload", but data does not satisfy any constructor');
+    throw new Error('Expected one of "ForwardPayload" in loading "ForwardPayload", but data does not satisfy any constructor');
 }
 
 export function storeForwardPayload(forwardPayload: ForwardPayload): (builder: Builder) => void {
-    if ((forwardPayload.kind == 'ForwardPayload_swap')) {
-        return ((builder: Builder) => {
-            builder.storeUint(0xe3a0d482, 32);
-            storeSwapStep(forwardPayload._)(builder);
-            let cell1 = beginCell();
-            storeSwapParams(forwardPayload.swap_params)(cell1);
-            builder.storeRef(cell1);
-        })
+    return ((builder: Builder) => {
+        builder.storeUint(0xe3a0d482, 32);
+        storeSwapStep(forwardPayload._)(builder);
+        let cell1 = beginCell();
+        storeSwapParams(forwardPayload.swap_params)(cell1);
+        builder.storeRef(cell1);
+    })
 
-    }
-    if ((forwardPayload.kind == 'ForwardPayload_deposit_liquidity')) {
-        return ((builder: Builder) => {
-            builder.storeUint(0x40e108d6, 32);
-            storePoolParams(forwardPayload.pool_params)(builder);
-            storeCoins(forwardPayload.min_lp_amount)(builder);
-            storeCoins(forwardPayload.asset0_target_balance)(builder);
-            storeCoins(forwardPayload.asset1_target_balance)(builder);
-            storeMaybe<Cell>(forwardPayload.fulfill_payload, ((arg: Cell) => {
-                return ((builder: Builder) => {
-                    let cell1 = beginCell();
-                    cell1.storeSlice(arg.beginParse(true));
-                    builder.storeRef(cell1);
-
-                })
-
-            }))(builder);
-            storeMaybe<Cell>(forwardPayload.reject_payload, ((arg: Cell) => {
-                return ((builder: Builder) => {
-                    let cell1 = beginCell();
-                    cell1.storeSlice(arg.beginParse(true));
-                    builder.storeRef(cell1);
-
-                })
-
-            }))(builder);
-        })
-
-    }
-    throw new Error('Expected one of "ForwardPayload_swap", "ForwardPayload_deposit_liquidity" in loading "ForwardPayload", but data does not satisfy any constructor');
 }
 
 /*
 swap#9c610de3 asset_in:Asset asset_out:Asset amount_in:Coins amount_out:Coins
               ^[ sender_addr:MsgAddressInt referral_addr:MsgAddress
               reserve0:Coins reserve1:Coins ] = ExtOutMsgBody;
-*/
-
-/*
-deposit#b544f4a4 sender_addr:MsgAddressInt amount0:Coins amount1:Coins
-                 reserve0:Coins reserve1:Coins liquidity:Coins = ExtOutMsgBody;
-*/
-
-/*
-withdrawal#3aa870a6 sender_addr:MsgAddressInt liquidity:Coins
-                    amount0:Coins amount1:Coins
-                    reserve0:Coins reserve1:Coins = ExtOutMsgBody;
 */
 
 export function loadExtOutMsgBody(slice: Slice): ExtOutMsgBody {
@@ -892,7 +593,7 @@ export function loadExtOutMsgBody(slice: Slice): ExtOutMsgBody {
         let reserve0: Coins = loadCoins(slice1);
         let reserve1: Coins = loadCoins(slice1);
         return {
-            kind: 'ExtOutMsgBody_swap',
+            kind: 'ExtOutMsgBody',
             asset_in: asset_in,
             asset_out: asset_out,
             amount_in: amount_in,
@@ -904,87 +605,23 @@ export function loadExtOutMsgBody(slice: Slice): ExtOutMsgBody {
         }
 
     }
-    if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0xb544f4a4))) {
-        slice.loadUint(32);
-        let sender_addr: Address = slice.loadAddress();
-        let amount0: Coins = loadCoins(slice);
-        let amount1: Coins = loadCoins(slice);
-        let reserve0: Coins = loadCoins(slice);
-        let reserve1: Coins = loadCoins(slice);
-        let liquidity: Coins = loadCoins(slice);
-        return {
-            kind: 'ExtOutMsgBody_deposit',
-            sender_addr: sender_addr,
-            amount0: amount0,
-            amount1: amount1,
-            reserve0: reserve0,
-            reserve1: reserve1,
-            liquidity: liquidity,
-        }
-
-    }
-    if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0x3aa870a6))) {
-        slice.loadUint(32);
-        let sender_addr: Address = slice.loadAddress();
-        let liquidity: Coins = loadCoins(slice);
-        let amount0: Coins = loadCoins(slice);
-        let amount1: Coins = loadCoins(slice);
-        let reserve0: Coins = loadCoins(slice);
-        let reserve1: Coins = loadCoins(slice);
-        return {
-            kind: 'ExtOutMsgBody_withdrawal',
-            sender_addr: sender_addr,
-            liquidity: liquidity,
-            amount0: amount0,
-            amount1: amount1,
-            reserve0: reserve0,
-            reserve1: reserve1,
-        }
-
-    }
-    throw new Error('Expected one of "ExtOutMsgBody_swap", "ExtOutMsgBody_deposit", "ExtOutMsgBody_withdrawal" in loading "ExtOutMsgBody", but data does not satisfy any constructor');
+    throw new Error('Expected one of "ExtOutMsgBody" in loading "ExtOutMsgBody", but data does not satisfy any constructor');
 }
 
 export function storeExtOutMsgBody(extOutMsgBody: ExtOutMsgBody): (builder: Builder) => void {
-    if ((extOutMsgBody.kind == 'ExtOutMsgBody_swap')) {
-        return ((builder: Builder) => {
-            builder.storeUint(0x9c610de3, 32);
-            storeAsset(extOutMsgBody.asset_in)(builder);
-            storeAsset(extOutMsgBody.asset_out)(builder);
-            storeCoins(extOutMsgBody.amount_in)(builder);
-            storeCoins(extOutMsgBody.amount_out)(builder);
-            let cell1 = beginCell();
-            cell1.storeAddress(extOutMsgBody.sender_addr);
-            cell1.storeAddress(extOutMsgBody.referral_addr);
-            storeCoins(extOutMsgBody.reserve0)(cell1);
-            storeCoins(extOutMsgBody.reserve1)(cell1);
-            builder.storeRef(cell1);
-        })
+    return ((builder: Builder) => {
+        builder.storeUint(0x9c610de3, 32);
+        storeAsset(extOutMsgBody.asset_in)(builder);
+        storeAsset(extOutMsgBody.asset_out)(builder);
+        storeCoins(extOutMsgBody.amount_in)(builder);
+        storeCoins(extOutMsgBody.amount_out)(builder);
+        let cell1 = beginCell();
+        cell1.storeAddress(extOutMsgBody.sender_addr);
+        cell1.storeAddress(extOutMsgBody.referral_addr);
+        storeCoins(extOutMsgBody.reserve0)(cell1);
+        storeCoins(extOutMsgBody.reserve1)(cell1);
+        builder.storeRef(cell1);
+    })
 
-    }
-    if ((extOutMsgBody.kind == 'ExtOutMsgBody_deposit')) {
-        return ((builder: Builder) => {
-            builder.storeUint(0xb544f4a4, 32);
-            builder.storeAddress(extOutMsgBody.sender_addr);
-            storeCoins(extOutMsgBody.amount0)(builder);
-            storeCoins(extOutMsgBody.amount1)(builder);
-            storeCoins(extOutMsgBody.reserve0)(builder);
-            storeCoins(extOutMsgBody.reserve1)(builder);
-            storeCoins(extOutMsgBody.liquidity)(builder);
-        })
-
-    }
-    if ((extOutMsgBody.kind == 'ExtOutMsgBody_withdrawal')) {
-        return ((builder: Builder) => {
-            builder.storeUint(0x3aa870a6, 32);
-            builder.storeAddress(extOutMsgBody.sender_addr);
-            storeCoins(extOutMsgBody.liquidity)(builder);
-            storeCoins(extOutMsgBody.amount0)(builder);
-            storeCoins(extOutMsgBody.amount1)(builder);
-            storeCoins(extOutMsgBody.reserve0)(builder);
-            storeCoins(extOutMsgBody.reserve1)(builder);
-        })
-
-    }
-    throw new Error('Expected one of "ExtOutMsgBody_swap", "ExtOutMsgBody_deposit", "ExtOutMsgBody_withdrawal" in loading "ExtOutMsgBody", but data does not satisfy any constructor');
 }
+
