@@ -16,10 +16,12 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as crons from "../crons.js";
-import type * as transactions from "../transactions.js";
-import type * as transactionsAction from "../transactionsAction.js";
+import type * as pools from "../pools.js";
+import type * as tradeTokens from "../tradeTokens.js";
+import type * as tradeTokensAction from "../tradeTokensAction.js";
+import type * as trades from "../trades.js";
+import type * as tradesAction from "../tradesAction.js";
 import type * as utils from "../utils.js";
-import type * as watchAddresses from "../watchAddresses.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -31,10 +33,12 @@ import type * as watchAddresses from "../watchAddresses.js";
  */
 declare const fullApi: ApiFromModules<{
   crons: typeof crons;
-  transactions: typeof transactions;
-  transactionsAction: typeof transactionsAction;
+  pools: typeof pools;
+  tradeTokens: typeof tradeTokens;
+  tradeTokensAction: typeof tradeTokensAction;
+  trades: typeof trades;
+  tradesAction: typeof tradesAction;
   utils: typeof utils;
-  watchAddresses: typeof watchAddresses;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

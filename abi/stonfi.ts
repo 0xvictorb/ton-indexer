@@ -15,30 +15,6 @@ export function bitLen(n: number) {
     return n.toString(2).length;
 }
 
-// transfer_notification#7362d09c query_id:uint64 jetton_amount:Grams from_user:MsgAddress ref_msg_data:^DexPayload = InternalMsgBody;
-
-// swap#25938561 query_id:uint64 from_user:MsgAddress token_wallet:MsgAddress amount:Grams min_out:Grams ref_bodycell:(Either RefBodyCell ^RefBodyCell) = InternalMsgBody;
-
-export type InternalMsgBody = InternalMsgBody_transfer_notification | InternalMsgBody_swap;
-
-export interface InternalMsgBody_transfer_notification {
-    readonly kind: 'InternalMsgBody_transfer_notification';
-    readonly query_id: number;
-    readonly jetton_amount: bigint;
-    readonly from_user: Address | ExternalAddress | null;
-    readonly ref_msg_data: DexPayload;
-}
-
-export interface InternalMsgBody_swap {
-    readonly kind: 'InternalMsgBody_swap';
-    readonly query_id: number;
-    readonly from_user: Address | ExternalAddress | null;
-    readonly token_wallet: Address | ExternalAddress | null;
-    readonly amount: bigint;
-    readonly min_out: bigint;
-    readonly ref_bodycell: Either<RefBodyCell, RefBodyCell>;
-}
-
 // swap_op#25938561 = SwapOP;
 
 export interface SwapOP {
@@ -81,87 +57,38 @@ export interface RefBodyCell {
     readonly ref_address: Address | ExternalAddress | null;
 }
 
-// transfer_notification#7362d09c query_id:uint64 jetton_amount:Grams from_user:MsgAddress ref_msg_data:^DexPayload = InternalMsgBody;
-
 // swap#25938561 query_id:uint64 from_user:MsgAddress token_wallet:MsgAddress amount:Grams min_out:Grams ref_bodycell:(Either RefBodyCell ^RefBodyCell) = InternalMsgBody;
 
-export function loadInternalMsgBody(slice: Slice): InternalMsgBody {
-    if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0x7362d09c))) {
-        slice.loadUint(32);
-        let query_id: number = slice.loadUint(64);
-        let jetton_amount: bigint = slice.loadCoins();
-        let from_user: Address | ExternalAddress | null = slice.loadAddressAny();
-        let slice1 = slice.loadRef().beginParse(true);
-        let ref_msg_data: DexPayload = loadDexPayload(slice1);
-        return {
-            kind: 'InternalMsgBody_transfer_notification',
-            query_id: query_id,
-            jetton_amount: jetton_amount,
-            from_user: from_user,
-            ref_msg_data: ref_msg_data,
-        }
+// pay_to#f93bb43f query_id:uint64 owner:MsgAddress exit_code:uint32 ref_coins_data:^RefCoinsData = InternalMsgBody;
 
-    }
-    if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0x25938561))) {
-        slice.loadUint(32);
-        let query_id: number = slice.loadUint(64);
-        let from_user: Address | ExternalAddress | null = slice.loadAddressAny();
-        let token_wallet: Address | ExternalAddress | null = slice.loadAddressAny();
-        let amount: bigint = slice.loadCoins();
-        let min_out: bigint = slice.loadCoins();
-        let ref_bodycell: Either<RefBodyCell, RefBodyCell> = loadEither<RefBodyCell, RefBodyCell>(slice, loadRefBodyCell, ((slice: Slice) => {
-            let slice1 = slice.loadRef().beginParse(true);
-            return loadRefBodyCell(slice1)
+export type InternalMsgBody = InternalMsgBody_swap | InternalMsgBody_pay_to;
 
-        }));
-        return {
-            kind: 'InternalMsgBody_swap',
-            query_id: query_id,
-            from_user: from_user,
-            token_wallet: token_wallet,
-            amount: amount,
-            min_out: min_out,
-            ref_bodycell: ref_bodycell,
-        }
-
-    }
-    throw new Error('Expected one of "InternalMsgBody_transfer_notification", "InternalMsgBody_swap" in loading "InternalMsgBody", but data does not satisfy any constructor');
+export interface InternalMsgBody_swap {
+    readonly kind: 'InternalMsgBody_swap';
+    readonly query_id: number;
+    readonly from_user: Address | ExternalAddress | null;
+    readonly token_wallet: Address | ExternalAddress | null;
+    readonly amount: bigint;
+    readonly min_out: bigint;
+    readonly ref_bodycell: Either<RefBodyCell, RefBodyCell>;
 }
 
-export function storeInternalMsgBody(internalMsgBody: InternalMsgBody): (builder: Builder) => void {
-    if ((internalMsgBody.kind == 'InternalMsgBody_transfer_notification')) {
-        return ((builder: Builder) => {
-            builder.storeUint(0x7362d09c, 32);
-            builder.storeUint(internalMsgBody.query_id, 64);
-            builder.storeCoins(internalMsgBody.jetton_amount);
-            builder.storeAddress(internalMsgBody.from_user);
-            let cell1 = beginCell();
-            storeDexPayload(internalMsgBody.ref_msg_data)(cell1);
-            builder.storeRef(cell1);
-        })
+export interface InternalMsgBody_pay_to {
+    readonly kind: 'InternalMsgBody_pay_to';
+    readonly query_id: number;
+    readonly owner: Address | ExternalAddress | null;
+    readonly exit_code: number;
+    readonly ref_coins_data: RefCoinsData;
+}
 
-    }
-    if ((internalMsgBody.kind == 'InternalMsgBody_swap')) {
-        return ((builder: Builder) => {
-            builder.storeUint(0x25938561, 32);
-            builder.storeUint(internalMsgBody.query_id, 64);
-            builder.storeAddress(internalMsgBody.from_user);
-            builder.storeAddress(internalMsgBody.token_wallet);
-            builder.storeCoins(internalMsgBody.amount);
-            builder.storeCoins(internalMsgBody.min_out);
-            storeEither<RefBodyCell, RefBodyCell>(internalMsgBody.ref_bodycell, storeRefBodyCell, ((arg: RefBodyCell) => {
-                return ((builder: Builder) => {
-                    let cell1 = beginCell();
-                    storeRefBodyCell(arg)(cell1);
-                    builder.storeRef(cell1);
+// ref_coins_data$_ amount0_out:Grams token0_address:MsgAddress amount1_out:Grams token1_address:MsgAddress = RefCoinsData;
 
-                })
-
-            }))(builder);
-        })
-
-    }
-    throw new Error('Expected one of "InternalMsgBody_transfer_notification", "InternalMsgBody_swap" in loading "InternalMsgBody", but data does not satisfy any constructor');
+export interface RefCoinsData {
+    readonly kind: 'RefCoinsData';
+    readonly amount0_out: bigint;
+    readonly token0_address: Address | ExternalAddress | null;
+    readonly amount1_out: bigint;
+    readonly token1_address: Address | ExternalAddress | null;
 }
 
 // swap_op#25938561 = SwapOP;
@@ -295,6 +222,116 @@ export function storeRefBodyCell(refBodyCell: RefBodyCell): (builder: Builder) =
     return ((builder: Builder) => {
         builder.storeAddress(refBodyCell.from_real_user);
         builder.storeAddress(refBodyCell.ref_address);
+    })
+
+}
+
+// swap#25938561 query_id:uint64 from_user:MsgAddress token_wallet:MsgAddress amount:Grams min_out:Grams ref_bodycell:(Either RefBodyCell ^RefBodyCell) = InternalMsgBody;
+
+// pay_to#f93bb43f query_id:uint64 owner:MsgAddress exit_code:uint32 ref_coins_data:^RefCoinsData = InternalMsgBody;
+
+export function loadInternalMsgBody(slice: Slice): InternalMsgBody {
+    if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0x25938561))) {
+        slice.loadUint(32);
+        let query_id: number = slice.loadUint(64);
+        let from_user: Address | ExternalAddress | null = slice.loadAddressAny();
+        let token_wallet: Address | ExternalAddress | null = slice.loadAddressAny();
+        let amount: bigint = slice.loadCoins();
+        let min_out: bigint = slice.loadCoins();
+        let ref_bodycell: Either<RefBodyCell, RefBodyCell> = loadEither<RefBodyCell, RefBodyCell>(slice, loadRefBodyCell, ((slice: Slice) => {
+            let slice1 = slice.loadRef().beginParse(true);
+            return loadRefBodyCell(slice1)
+
+        }));
+        return {
+            kind: 'InternalMsgBody_swap',
+            query_id: query_id,
+            from_user: from_user,
+            token_wallet: token_wallet,
+            amount: amount,
+            min_out: min_out,
+            ref_bodycell: ref_bodycell,
+        }
+
+    }
+    if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0xf93bb43f))) {
+        slice.loadUint(32);
+        let query_id: number = slice.loadUint(64);
+        let owner: Address | ExternalAddress | null = slice.loadAddressAny();
+        let exit_code: number = slice.loadUint(32);
+        let slice1 = slice.loadRef().beginParse(true);
+        let ref_coins_data: RefCoinsData = loadRefCoinsData(slice1);
+        return {
+            kind: 'InternalMsgBody_pay_to',
+            query_id: query_id,
+            owner: owner,
+            exit_code: exit_code,
+            ref_coins_data: ref_coins_data,
+        }
+
+    }
+    throw new Error('Expected one of "InternalMsgBody_swap", "InternalMsgBody_pay_to" in loading "InternalMsgBody", but data does not satisfy any constructor');
+}
+
+export function storeInternalMsgBody(internalMsgBody: InternalMsgBody): (builder: Builder) => void {
+    if ((internalMsgBody.kind == 'InternalMsgBody_swap')) {
+        return ((builder: Builder) => {
+            builder.storeUint(0x25938561, 32);
+            builder.storeUint(internalMsgBody.query_id, 64);
+            builder.storeAddress(internalMsgBody.from_user);
+            builder.storeAddress(internalMsgBody.token_wallet);
+            builder.storeCoins(internalMsgBody.amount);
+            builder.storeCoins(internalMsgBody.min_out);
+            storeEither<RefBodyCell, RefBodyCell>(internalMsgBody.ref_bodycell, storeRefBodyCell, ((arg: RefBodyCell) => {
+                return ((builder: Builder) => {
+                    let cell1 = beginCell();
+                    storeRefBodyCell(arg)(cell1);
+                    builder.storeRef(cell1);
+
+                })
+
+            }))(builder);
+        })
+
+    }
+    if ((internalMsgBody.kind == 'InternalMsgBody_pay_to')) {
+        return ((builder: Builder) => {
+            builder.storeUint(0xf93bb43f, 32);
+            builder.storeUint(internalMsgBody.query_id, 64);
+            builder.storeAddress(internalMsgBody.owner);
+            builder.storeUint(internalMsgBody.exit_code, 32);
+            let cell1 = beginCell();
+            storeRefCoinsData(internalMsgBody.ref_coins_data)(cell1);
+            builder.storeRef(cell1);
+        })
+
+    }
+    throw new Error('Expected one of "InternalMsgBody_swap", "InternalMsgBody_pay_to" in loading "InternalMsgBody", but data does not satisfy any constructor');
+}
+
+// ref_coins_data$_ amount0_out:Grams token0_address:MsgAddress amount1_out:Grams token1_address:MsgAddress = RefCoinsData;
+
+export function loadRefCoinsData(slice: Slice): RefCoinsData {
+    let amount0_out: bigint = slice.loadCoins();
+    let token0_address: Address | ExternalAddress | null = slice.loadAddressAny();
+    let amount1_out: bigint = slice.loadCoins();
+    let token1_address: Address | ExternalAddress | null = slice.loadAddressAny();
+    return {
+        kind: 'RefCoinsData',
+        amount0_out: amount0_out,
+        token0_address: token0_address,
+        amount1_out: amount1_out,
+        token1_address: token1_address,
+    }
+
+}
+
+export function storeRefCoinsData(refCoinsData: RefCoinsData): (builder: Builder) => void {
+    return ((builder: Builder) => {
+        builder.storeCoins(refCoinsData.amount0_out);
+        builder.storeAddress(refCoinsData.token0_address);
+        builder.storeCoins(refCoinsData.amount1_out);
+        builder.storeAddress(refCoinsData.token1_address);
     })
 
 }

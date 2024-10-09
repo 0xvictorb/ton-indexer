@@ -988,4 +988,3 @@ export function storeExtOutMsgBody(extOutMsgBody: ExtOutMsgBody): (builder: Buil
     }
     throw new Error('Expected one of "ExtOutMsgBody_swap", "ExtOutMsgBody_deposit", "ExtOutMsgBody_withdrawal" in loading "ExtOutMsgBody", but data does not satisfy any constructor');
 }
-

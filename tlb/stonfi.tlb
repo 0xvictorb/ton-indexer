@@ -1,5 +1,3 @@
-transfer_notification#7362d09c query_id:uint64 jetton_amount:Grams from_user:MsgAddress ref_msg_data:^DexPayload = InternalMsgBody;
-
 swap_op#25938561 = SwapOP;
 swap$_ transferred_op:SwapOP token_wallet1:MsgAddress min_out:Grams to_address:MsgAddress ref_address:(Either MsgAddress MsgAddress) = DexPayload;
 
@@ -8,3 +6,6 @@ provide_lp$_ transferred_op:ProvideLpOP token_wallet1:MsgAddress min_lp_out:Gram
 
 ref_bodycell$_ from_real_user:MsgAddress ref_address:MsgAddress = RefBodyCell;
 swap#25938561 query_id:uint64 from_user:MsgAddress token_wallet:MsgAddress amount:Grams min_out:Grams ref_bodycell:(Either RefBodyCell ^RefBodyCell) = InternalMsgBody;
+
+ref_coins_data$_ amount0_out:Grams token0_address:MsgAddress amount1_out:Grams token1_address:MsgAddress = RefCoinsData;
+pay_to#f93bb43f query_id:uint64 owner:MsgAddress exit_code:uint32 ref_coins_data:^RefCoinsData = InternalMsgBody;
