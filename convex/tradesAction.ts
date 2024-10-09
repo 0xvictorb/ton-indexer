@@ -9,7 +9,6 @@ import { loadInternalMsgBody, type InternalMsgBody_swap, type InternalMsgBody_pa
 import { loadExtOutMsgBody, type ExtOutMsgBody } from '@/abi/dedust';
 import { loadInMsgBody as loadInMsgBodyUtyab, type InMsgBody as InMsgBodyUtyab } from '@/abi/utyab';
 import { tonClient } from '@/ton-client';
-import { JettonWallet } from '@ton/ton';
 
 const TON_ADDRESS = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c';
 
