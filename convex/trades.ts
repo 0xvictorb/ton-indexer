@@ -116,6 +116,6 @@ export const getTradesByContractName = query({
             throw new ConvexError("Unauthorized");
         }
 
-        return await ctx.db.query("trades").filter((q) => q.eq(q.field("contractName"), args.contractName)).collect();
+        return await ctx.db.query("trades").withIndex("by_contractName", (q) => q.eq('contractName', args.contractName)).collect();
     },
 });
