@@ -28,16 +28,14 @@ export default defineSchema({
         reserveOut: v.string(),
         block: v.number(),
         timestamp: v.number(),
+        contractName: v.union(v.literal('stonfi'), v.literal('dedust'), v.literal('utyab')),
         sender: v.string(),
         receiver: v.optional(v.string()),
-        contractName: v.union(v.literal('stonfi'), v.literal('dedust'), v.literal('utyab')),
         fee: v.optional(v.string()),
         endTimestamp: v.optional(v.number()),
     })
         .index('by_hash', ['hash'])
-        .index('by_pool', ['pool'])
-        .index('by_tokenIn', ['tokenIn'])
-        .index('by_tokenOut', ['tokenOut'])
-        .index('by_block', ['block'])
-        .index('by_timestamp', ['timestamp']),
+        .index('by_contract_and_timestamp', ['contractName', 'timestamp'])
+        .index('by_timestamp', ['timestamp'])
+        .index("by_contract_sender_receiver", ["contractName", "sender", "receiver"]),
 });

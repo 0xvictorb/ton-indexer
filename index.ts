@@ -63,57 +63,6 @@ async function processStonfi(block: BlockID) {
     }
 }
 
-async function processDedustTON_USDT(block: BlockID) {
-    const accountState = await tonClient.getAccountState(Address.parse(watchAddresses.dedustTON_USDT.address), block);
-    const ltState = accountState.lastTx!.lt.toString();
-    const hashState = Buffer.from(padString(accountState.lastTx!.hash.toString(16)), 'hex');
-
-    const transactionsRaw = await tonClient.getAccountTransactions(
-        Address.parse(watchAddresses.dedustTON_USDT.address),
-        ltState,
-        hashState, 100);
-    
-    const transactions: Transaction[] = [];
-    for (const trx of Cell.fromBoc(transactionsRaw.transactions)) {
-      transactions.push(loadTransaction(trx.beginParse()));
-    }
-
-    for (const trx of transactions) {
-      const inMessage = trx.inMessage;
-      if (!inMessage) {
-        continue;
-      }
-
-      const sender = inMessage.info.src;
-      if (!(sender instanceof Address)) {
-        continue;
-      }
-
-      const cellInMessage = inMessage.body;
-      if (cellInMessage === undefined) {
-        continue;
-      }
-
-      const outMessages = trx.outMessages.values();
-      
-      for (const outMessage of outMessages) {
-        const slice = outMessage.body.beginParse();
-
-        let payload: ExtOutMsgBody;
-        try {
-            payload = loadExtOutMsgBody(slice);
-        } catch (error) {
-            console.log('not a swap event', trx.hash().toString('hex'));
-            console.log('----------------------------------------');
-            continue;
-        }
-
-        console.log('SWAP EVENT:', trx.hash().toString('hex'));
-        console.log('Payload:', payload);
-        console.log('----------------------------------------');
-      }
-    }
-}
 
 async function main() {
   console.log('Watch addresses loaded:', watchAddresses);
@@ -125,7 +74,6 @@ async function main() {
 
   await Promise.all([
     processStonfi(last),
-    processDedustTON_USDT(last),
   ]);
 }
 

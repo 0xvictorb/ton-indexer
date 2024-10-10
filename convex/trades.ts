@@ -22,7 +22,7 @@ export const createTrade = internalMutation({
         endTimestamp: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const existingTrade = await ctx.db.query("trades").filter((q) => q.eq(q.field("hash"), args.hash)).first();
+        const existingTrade = await ctx.db.query("trades").withIndex("by_hash", (q) => q.eq('hash', args.hash)).first();
 
         if (existingTrade) {
             return existingTrade._id;
@@ -76,11 +76,12 @@ export const list = query({
             throw new ConvexError("Unauthorized");
         }
 
-        let tradesQuery = ctx.db.query("trades")
+        let tradesQuery = ctx.db
+            .query("trades")
+            .withIndex("by_contract_sender_receiver")
             .filter((q) => args.contractName ? q.eq(q.field("contractName"), args.contractName) : true)
             .filter((q) => args.walletAddress ? q.or(q.eq(q.field("sender"), args.walletAddress), q.eq(q.field("receiver"), args.walletAddress)) : true)
             .order(args.order ?? "desc");
-
 
         const { page, ...pagination } = await tradesQuery.paginate(args.paginationOpts);
 
@@ -90,11 +91,7 @@ export const list = query({
             return { ...trade, tokenIn, tokenOut };
         }));
 
-        const sortedTrades = tradesWithTokens.sort((a, b) => {
-            return args.order === "desc" ? a.timestamp - b.timestamp : b.timestamp - a.timestamp;
-        });
-
-        return { ...pagination, page: sortedTrades };
+        return { ...pagination, page: tradesWithTokens };
     },
 });
 
