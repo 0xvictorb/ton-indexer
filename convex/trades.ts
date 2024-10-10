@@ -60,9 +60,37 @@ export const getAll = query({
 });
 
 export const list = query({
-    args: { paginationOpts: paginationOptsValidator },
+    args: {
+        secret: v.string(),
+        paginationOpts: paginationOptsValidator,
+        order: v.optional(v.union(v.literal("asc"), v.literal("desc"))),
+        contractName: v.optional(v.union(v.literal("stonfi"), v.literal("dedust"), v.literal("utyab"))),
+        walletAddress: v.optional(v.string()),
+    },
     handler: async (ctx, args) => {
-        return await ctx.db.query("trades").order("desc").paginate(args.paginationOpts);
+        if (args.secret !== process.env.SECRET) {
+            throw new ConvexError("Unauthorized");
+        }
+
+        let tradesQuery = ctx.db.query("trades")
+            .filter((q) => args.contractName ? q.eq(q.field("contractName"), args.contractName) : true)
+            .filter((q) => args.walletAddress ? q.or(q.eq(q.field("sender"), args.walletAddress), q.eq(q.field("receiver"), args.walletAddress)) : true)
+            .order(args.order ?? "desc");
+
+
+        const { page, ...pagination } = await tradesQuery.paginate(args.paginationOpts);
+
+        const tradesWithTokens = await Promise.all(page.map(async (trade) => {
+            const tokenIn = trade.tokenIn ? await ctx.db.get(trade.tokenIn) : null;
+            const tokenOut = trade.tokenOut ? await ctx.db.get(trade.tokenOut) : null;
+            return { ...trade, tokenIn, tokenOut };
+        }));
+
+        const sortedTrades = tradesWithTokens.sort((a, b) => {
+            return args.order === "desc" ? a.timestamp - b.timestamp : b.timestamp - a.timestamp;
+        });
+
+        return { ...pagination, page: sortedTrades };
     },
 });
 
