@@ -24,4 +24,4 @@ jobs:
     - name: Deploy to Convex Preview - UTYABSWAP's deployment
       run: bunx convex deploy --cmd-url-env-var-name https://adept-lion-304.convex.cloud
       env:
-        CONVEX_DEPLOYMENT: ${{ secrets.CONVEX_DEPLOYMENT }}
+        CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
