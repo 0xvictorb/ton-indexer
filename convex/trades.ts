@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, query } from "./_generated/server";
 import { ConvexError } from "convex/values";
+import { paginationOptsValidator } from "convex/server";
 
 export const createTrade = internalMutation({
     args: {
@@ -55,6 +56,13 @@ export const getAll = query({
         }
 
         return await ctx.db.query("trades").order("desc").collect();
+    },
+});
+
+export const list = query({
+    args: { paginationOpts: paginationOptsValidator },
+    handler: async (ctx, args) => {
+        return await ctx.db.query("trades").order("desc").paginate(args.paginationOpts);
     },
 });
 
