@@ -76,16 +76,27 @@ export const list = query({
             throw new ConvexError("Unauthorized");
         }
 
-        let tradesQuery = ctx.db
-            .query("trades")
-            .withIndex("by_contract_sender_receiver")
-            .filter((q) => args.contractName ? q.eq(q.field("contractName"), args.contractName) : true)
-            .filter((q) => args.walletAddress ? q.or(q.eq(q.field("sender"), args.walletAddress), q.eq(q.field("receiver"), args.walletAddress)) : true)
-            .order(args.order ?? "desc");
+        let tradesQuery;
+        if (args.contractName) {
+            tradesQuery = ctx.db.query("trades").withIndex("by_contractName", (q) => 
+                q.eq("contractName", args.contractName!)
+            );
+        } else {
+            tradesQuery = ctx.db.query("trades");
+        }
+
+        tradesQuery = tradesQuery.order(args.order ?? "desc");
 
         const { page, ...pagination } = await tradesQuery.paginate(args.paginationOpts);
 
-        const tradesWithTokens = await Promise.all(page.map(async (trade) => {
+        const filteredTrades = page.filter((trade) => {
+            if (args.walletAddress) {
+                return trade.sender === args.walletAddress || trade.receiver === args.walletAddress;
+            }
+            return true;
+        });
+
+        const tradesWithTokens = await Promise.all(filteredTrades.map(async (trade) => {
             const tokenIn = trade.tokenIn ? await ctx.db.get(trade.tokenIn) : null;
             const tokenOut = trade.tokenOut ? await ctx.db.get(trade.tokenOut) : null;
             return { ...trade, tokenIn, tokenOut };

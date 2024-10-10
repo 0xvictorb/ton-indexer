@@ -35,7 +35,7 @@ export default defineSchema({
         endTimestamp: v.optional(v.number()),
     })
         .index('by_hash', ['hash'])
+        .index('by_contractName', ['contractName'])
         .index('by_contract_and_timestamp', ['contractName', 'timestamp'])
-        .index('by_timestamp', ['timestamp'])
-        .index("by_contract_sender_receiver", ["contractName", "sender", "receiver"]),
+        .index('by_timestamp', ['timestamp']),
 });
