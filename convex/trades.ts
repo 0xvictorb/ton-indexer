@@ -18,6 +18,8 @@ export const createTrade = internalMutation({
         contractName: v.union(v.literal("stonfi"), v.literal("dedust"), v.literal("utyab")),
         sender: v.string(),
         receiver: v.optional(v.string()),
+        fee: v.optional(v.string()),
+        endTimestamp: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
         const existingTrade = await ctx.db.query("trades").filter((q) => q.eq(q.field("hash"), args.hash)).first();
@@ -40,6 +42,8 @@ export const createTrade = internalMutation({
             amountOut: args.amountOut,
             reserveIn: args.reserveIn,
             reserveOut: args.reserveOut,
+            fee: args.fee,
+            endTimestamp: args.endTimestamp,
         });
 
         return tradeId;

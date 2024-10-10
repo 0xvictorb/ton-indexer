@@ -31,6 +31,8 @@ export default defineSchema({
         sender: v.string(),
         receiver: v.optional(v.string()),
         contractName: v.union(v.literal('stonfi'), v.literal('dedust'), v.literal('utyab')),
+        fee: v.optional(v.string()),
+        endTimestamp: v.optional(v.number()),
     })
         .index('by_hash', ['hash'])
         .index('by_pool', ['pool'])

@@ -46,13 +46,12 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
         }
 
         const sender = inMessage.info.src;
+        const startTimestamp = 'createdAt' in inMessage.info ? inMessage.info.createdAt : trx.now;
 
         const outMessages = trx.outMessages.values();
         const swapMessage = inMessage;
         const paymentMessage = _.nth(outMessages, 1);
-
-        console.log('have swapMessage', !!swapMessage);
-        console.log('have paymentMessage', !!paymentMessage);
+        const endTimestamp = paymentMessage ? ('createdAt' in paymentMessage.info ? paymentMessage.info.createdAt : undefined) : undefined;
 
         if (swapMessage && paymentMessage) {
             const sliceSwap = swapMessage.body.beginParse();
@@ -99,10 +98,12 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
                 reserveIn: reserveIn.toString(),
                 reserveOut: reserveOut.toString(),
                 block: block.seqno,
-                timestamp: trx.now,
+                timestamp: startTimestamp,
+                endTimestamp: endTimestamp,
                 contractName: 'stonfi' as const,
                 sender: sender.toString(),
                 receiver: inMessage.info.dest?.toString(),
+                fee: trx.totalFees.coins.toString(),
             };
 
             await ctx.runMutation(internal.trades.createTrade, transaction);
@@ -141,7 +142,11 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
             continue;
         }
 
+        const startTimestamp = 'createdAt' in inMessage.info ? inMessage.info.createdAt : trx.now;
+
         const outMessages = trx.outMessages.values();
+        const lastOutMessage = _.last(outMessages);
+        const endTimestamp = lastOutMessage ? ('createdAt' in lastOutMessage.info ? lastOutMessage.info.createdAt : undefined) : undefined;
 
         for (const outMessage of outMessages) {
             const slice = outMessage.body.beginParse();
@@ -178,10 +183,12 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
                 reserveIn: reserveIn.toString(),
                 reserveOut: reserveOut.toString(),
                 block: block.seqno,
-                timestamp: trx.now,
+                timestamp: startTimestamp,
+                endTimestamp: endTimestamp,
                 contractName: 'dedust' as const,
                 sender: sender.toString(),
                 receiver: inMessage.info.dest?.toString(),
+                fee: trx.totalFees.coins.toString(),
             };
 
             await ctx.runMutation(internal.trades.createTrade, transaction);
