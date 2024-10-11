@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalQuery, internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 export const get = internalQuery({
     args: {
@@ -22,6 +23,11 @@ export const create = internalMutation({
     },
     handler: async (ctx, args) => {
         const { address, name, symbol, image, decimals, kind } = args;
+        const existingToken = await ctx.runQuery(internal.tradeTokens.get, { address });
+        if (existingToken) {
+            return null;
+        }
+        
         await ctx.db.insert('tradeTokens', { address, name, symbol, image, decimals, kind });
     }
 })
