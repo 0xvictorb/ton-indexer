@@ -7,7 +7,7 @@ import _ from 'lodash-es';
 import type { BlockID } from "ton-lite-client";
 import { loadInternalMsgBody, type InternalMsgBody_swap, type InternalMsgBody_pay_to } from '@/abi/stonfi';
 import { loadExtOutMsgBody, type ExtOutMsgBody } from '@/abi/dedust';
-import { loadInMsgBody as loadInMsgBodyUtyab, type InMsgBody as InMsgBodyUtyab } from '@/abi/utyab';
+import { loadSwapEvent, type SwapEvent } from '@/abi/utyab';
 import { tonClient } from '@/ton-client';
 
 const TON_ADDRESS = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c';
@@ -229,47 +229,52 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
 
         const outMessages = trx.outMessages.values();
 
+        const lastOutMessage = _.last(outMessages);
+        const endTimestamp = lastOutMessage ? ('createdAt' in lastOutMessage.info ? lastOutMessage.info.createdAt : undefined) : undefined;
+
         for (const outMessage of outMessages) {
             const slice = outMessage.body.beginParse();
 
-            let payload: InMsgBodyUtyab;
+            let payload: SwapEvent;
             try {
-                payload = loadInMsgBodyUtyab(slice) as InMsgBodyUtyab;
+                payload = loadSwapEvent(slice) as SwapEvent;
             } catch (error) {
                 console.log('SKIP: not a swap event', trx.hash().toString('hex'));
                 continue;
             }
 
-            // FIXME: integrate
-            // const assetIn = payload.asset_in;
-            // const assetOut = payload.asset_out;
+            const assetIn = payload.asset_in;
+            const assetOut = payload.asset_out;
 
-            // const addressInAddress = assetIn.kind === 'Asset_jetton' ? uint256ToRawAddress(assetIn.address.toString()) : TON_ADDRESS;
-            // const addressOutAddress = assetOut.kind === 'Asset_jetton' ? uint256ToRawAddress(assetOut.address.toString()) : TON_ADDRESS;
+            const addressInAddress = assetIn.type === 1 ? uint256ToRawAddress(assetIn.address!.toString()) : TON_ADDRESS;
+            const addressOutAddress = assetOut.type === 1 ? uint256ToRawAddress(assetOut.address!.toString()) : TON_ADDRESS;
 
-            // const tradeTokenIn = await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: addressInAddress });
-            // const tradeTokenOut = await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: addressOutAddress });
-            // const amountIn = payload.amount_in.grams;
-            // const amountOut = payload.amount_out.grams;
-            // const reserveIn = payload.reserve0.grams;
-            // const reserveOut = payload.reserve1.grams;
+            const tradeTokenIn = await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: addressInAddress });
+            const tradeTokenOut = await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: addressOutAddress });
+            const amountIn = payload.amount_in;
+            const amountOut = payload.amount_out;
+            const reserveIn = payload.reserves.reserve_in;
+            const reserveOut = payload.reserves.reserve_out;
 
-            // const transaction = {
-            //     hash: trx.hash().toString('hex'),
-            //     tokenIn: tradeTokenIn.id,
-            //     tokenOut: tradeTokenOut.id,
-            //     amountIn: amountIn.toString(),
-            //     amountOut: amountOut.toString(),
-            //     reserveIn: reserveIn.toString(),
-            //     reserveOut: reserveOut.toString(),
-            //     block: block.seqno,
-            //     timestamp: trx.now,
-            //     contractName: 'utyab' as const,
-            //     sender: sender.toString(),
-            //     receiver: inMessage.info.dest?.toString(),
-            // };
+            const transaction = {
+                hash: trx.hash().toString('hex'),
+                pool: address,
+                tokenIn: tradeTokenIn?._id,
+                tokenOut: tradeTokenOut?._id,
+                amountIn: amountIn.toString(),
+                amountOut: amountOut.toString(),
+                reserveIn: reserveIn.toString(),
+                reserveOut: reserveOut.toString(),
+                block: block.seqno,
+                timestamp: trx.now,
+                endTimestamp: endTimestamp,
+                contractName: 'utyab' as const,
+                sender: sender.toString(),
+                receiver: inMessage.info.dest?.toString(),
+                fee: trx.totalFees.coins.toString(),
+            };
 
-            // await ctx.runMutation(internal.trades.createTrade, transaction);
+            await ctx.runMutation(internal.trades.createTrade, transaction);
         }
     }
 };
@@ -292,11 +297,10 @@ export const parseBlockTransactions = internalAction({
                         block: lastBlock
                     });
                 case 'utyab':
-                    // return processUtyabPool(ctx, {
-                    //     address: pool.address,
-                    //     block: lastBlock
-                    // });
-                    return Promise.resolve();
+                    return processUtyabPool(ctx, {
+                        address: pool.address,
+                        block: lastBlock
+                    });
                 default:
                     return Promise.resolve();
             }

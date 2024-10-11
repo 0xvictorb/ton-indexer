@@ -1,3 +1,3 @@
-_ type:uint8 address:uint256 = Asset;
-
-swap#0daa5c46 amount:Grams asset_in:Asset receiver:MsgAddressInt referral:MsgAddressInt = InMsgBody;
+_ type:uint8 hasAddress:Bool address:hasAddress?(uint256) = Asset;
+_ reserve_in:Grams reserve_out:Grams = Reserves;
+swap_event#01b1b11e asset_in:Asset asset_out:Asset amount_in:Grams amount_out:Grams min_out:Grams reserves:(^Reserves)= SwapEvent;

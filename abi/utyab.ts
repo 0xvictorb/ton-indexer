@@ -15,32 +15,45 @@ export function bitLen(n: number) {
     return n.toString(2).length;
 }
 
-// _ type:uint8 address:uint256 = Asset;
+// _ type:uint8 hasAddress:Bool address:hasAddress?(uint256) = Asset;
 
 export interface Asset {
     readonly kind: 'Asset';
     readonly type: number;
-    readonly address: bigint;
+    readonly hasAddress: boolean;
+    readonly address: bigint | undefined;
 }
 
-// swap#0daa5c46 amount:Grams asset_in:Asset receiver:MsgAddressInt referral:MsgAddressInt = InMsgBody;
+// _ reserve_in:Grams reserve_out:Grams = Reserves;
 
-export interface InMsgBody {
-    readonly kind: 'InMsgBody';
-    readonly amount: bigint;
+export interface Reserves {
+    readonly kind: 'Reserves';
+    readonly reserve_in: bigint;
+    readonly reserve_out: bigint;
+}
+
+// swap_event#01b1b11e asset_in:Asset asset_out:Asset amount_in:Grams amount_out:Grams min_out:Grams reserves:(^Reserves)= SwapEvent;
+
+export interface SwapEvent {
+    readonly kind: 'SwapEvent';
     readonly asset_in: Asset;
-    readonly receiver: Address;
-    readonly referral: Address;
+    readonly asset_out: Asset;
+    readonly amount_in: bigint;
+    readonly amount_out: bigint;
+    readonly min_out: bigint;
+    readonly reserves: Reserves;
 }
 
-// _ type:uint8 address:uint256 = Asset;
+// _ type:uint8 hasAddress:Bool address:hasAddress?(uint256) = Asset;
 
 export function loadAsset(slice: Slice): Asset {
     let type: number = slice.loadUint(8);
-    let address: bigint = slice.loadUintBig(256);
+    let hasAddress: boolean = slice.loadBoolean();
+    let address: bigint | undefined = (hasAddress ? slice.loadUintBig(256) : undefined);
     return {
         kind: 'Asset',
         type: type,
+        hasAddress: hasAddress,
         address: address,
     }
 
@@ -49,39 +62,73 @@ export function loadAsset(slice: Slice): Asset {
 export function storeAsset(asset: Asset): (builder: Builder) => void {
     return ((builder: Builder) => {
         builder.storeUint(asset.type, 8);
-        builder.storeUint(asset.address, 256);
+        builder.storeBit(asset.hasAddress);
+        if ((asset.address != undefined)) {
+            builder.storeUint(asset.address, 256);
+        }
     })
 
 }
 
-// swap#0daa5c46 amount:Grams asset_in:Asset receiver:MsgAddressInt referral:MsgAddressInt = InMsgBody;
+// _ reserve_in:Grams reserve_out:Grams = Reserves;
 
-export function loadInMsgBody(slice: Slice): InMsgBody {
-    if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0x0daa5c46))) {
+export function loadReserves(slice: Slice): Reserves {
+    let reserve_in: bigint = slice.loadCoins();
+    let reserve_out: bigint = slice.loadCoins();
+    return {
+        kind: 'Reserves',
+        reserve_in: reserve_in,
+        reserve_out: reserve_out,
+    }
+
+}
+
+export function storeReserves(reserves: Reserves): (builder: Builder) => void {
+    return ((builder: Builder) => {
+        builder.storeCoins(reserves.reserve_in);
+        builder.storeCoins(reserves.reserve_out);
+    })
+
+}
+
+// swap_event#01b1b11e asset_in:Asset asset_out:Asset amount_in:Grams amount_out:Grams min_out:Grams reserves:(^Reserves)= SwapEvent;
+
+export function loadSwapEvent(slice: Slice): SwapEvent {
+    if (((slice.remainingBits >= 32) && (slice.preloadUint(32) == 0x01b1b11e))) {
         slice.loadUint(32);
-        let amount: bigint = slice.loadCoins();
         let asset_in: Asset = loadAsset(slice);
-        let receiver: Address = slice.loadAddress();
-        let referral: Address = slice.loadAddress();
+        let asset_out: Asset = loadAsset(slice);
+        let amount_in: bigint = slice.loadCoins();
+        let amount_out: bigint = slice.loadCoins();
+        let min_out: bigint = slice.loadCoins();
+        let slice1 = slice.loadRef().beginParse(true);
+        let reserves: Reserves = loadReserves(slice1);
         return {
-            kind: 'InMsgBody',
-            amount: amount,
+            kind: 'SwapEvent',
             asset_in: asset_in,
-            receiver: receiver,
-            referral: referral,
+            asset_out: asset_out,
+            amount_in: amount_in,
+            amount_out: amount_out,
+            min_out: min_out,
+            reserves: reserves,
         }
 
     }
-    throw new Error('Expected one of "InMsgBody" in loading "InMsgBody", but data does not satisfy any constructor');
+    throw new Error('Expected one of "SwapEvent" in loading "SwapEvent", but data does not satisfy any constructor');
 }
 
-export function storeInMsgBody(inMsgBody: InMsgBody): (builder: Builder) => void {
+export function storeSwapEvent(swapEvent: SwapEvent): (builder: Builder) => void {
     return ((builder: Builder) => {
-        builder.storeUint(0x0daa5c46, 32);
-        builder.storeCoins(inMsgBody.amount);
-        storeAsset(inMsgBody.asset_in)(builder);
-        builder.storeAddress(inMsgBody.receiver);
-        builder.storeAddress(inMsgBody.referral);
+        builder.storeUint(0x01b1b11e, 32);
+        storeAsset(swapEvent.asset_in)(builder);
+        storeAsset(swapEvent.asset_out)(builder);
+        builder.storeCoins(swapEvent.amount_in);
+        builder.storeCoins(swapEvent.amount_out);
+        builder.storeCoins(swapEvent.min_out);
+        let cell1 = beginCell();
+        storeReserves(swapEvent.reserves)(cell1);
+        builder.storeRef(cell1);
     })
 
 }
+
