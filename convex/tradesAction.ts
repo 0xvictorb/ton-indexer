@@ -12,7 +12,7 @@ import { tonClient } from '@/ton-client';
 
 const TON_ADDRESS = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c';
 
-const getTransactionStartAndEndTime = async (hash: string) => {
+const getTransactionBasicInfo = async (hash: string) => {
     const traces = await fetch(`https://tonapi.io/v2/traces/${hash}`);
     const tracesJson = await traces.json();
 
@@ -34,6 +34,7 @@ const getTransactionStartAndEndTime = async (hash: string) => {
     return {
         start: filteredCreatedAtDates[0],
         end: filteredCreatedAtDates[filteredCreatedAtDates.length - 1],
+        from: tracesJson.transaction.account.address,
     };
 }
 
@@ -111,7 +112,7 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
             const tradeTokenIn = tokenInAddress ? await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: tokenInAddress }) : null;
             const tradeTokenOut = tokenOutAddress ? await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: tokenOutAddress }) : null;
 
-            const { start, end } = await getTransactionStartAndEndTime(trx.hash().toString('hex'));
+            const { start, end } = await getTransactionBasicInfo(trx.hash().toString('hex'));
 
             const transaction = {
                 hash: trx.hash().toString('hex'),
@@ -193,7 +194,7 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
             const reserveIn = payload.reserve0.grams;
             const reserveOut = payload.reserve1.grams;
 
-            const { start, end } = await getTransactionStartAndEndTime(trx.hash().toString('hex'));
+            const { start, end } = await getTransactionBasicInfo(trx.hash().toString('hex'));
 
             const transaction = {
                 hash: trx.hash().toString('hex'),
@@ -275,7 +276,7 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
             const reserveIn = payload.reserves.reserve_in;
             const reserveOut = payload.reserves.reserve_out;
 
-            const { start, end } = await getTransactionStartAndEndTime(trx.hash().toString('hex'));
+            const { start, end } = await getTransactionBasicInfo(trx.hash().toString('hex'));
 
             const transaction = {
                 hash: trx.hash().toString('hex'),
