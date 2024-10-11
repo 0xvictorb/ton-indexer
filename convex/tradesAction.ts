@@ -12,6 +12,31 @@ import { tonClient } from '@/ton-client';
 
 const TON_ADDRESS = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c';
 
+const getTransactionStartAndEndTime = async (hash: string) => {
+    const traces = await fetch(`https://tonapi.io/v2/traces/${hash}`);
+    const tracesJson = await traces.json();
+
+    const createdAtDates: number[] = [];
+    const findCreatedAt = (obj: any) => {
+        if (typeof obj === 'object') {
+            for (const key in obj) {
+                if (key === 'created_at') {
+                    createdAtDates.push(obj[key]);
+                } else {
+                    findCreatedAt(obj[key]);
+                }
+            }
+        }
+    };
+    findCreatedAt(tracesJson);
+    createdAtDates.sort((a, b) => a - b);
+    const filteredCreatedAtDates = createdAtDates.filter(Boolean);
+    return {
+        start: filteredCreatedAtDates[0],
+        end: filteredCreatedAtDates[filteredCreatedAtDates.length - 1],
+    };
+}
+
 function uint256ToRawAddress(uint256: string): string {
     const bigIntValue = BigInt(uint256);
 
@@ -46,12 +71,10 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
         }
 
         const sender = inMessage.info.src;
-        const startTimestamp = 'createdAt' in inMessage.info ? inMessage.info.createdAt : trx.now;
 
         const outMessages = trx.outMessages.values();
         const swapMessage = inMessage;
         const paymentMessage = _.nth(outMessages, 1);
-        const endTimestamp = paymentMessage ? ('createdAt' in paymentMessage.info ? paymentMessage.info.createdAt : undefined) : undefined;
 
         if (swapMessage && paymentMessage) {
             const sliceSwap = swapMessage.body.beginParse();
@@ -88,6 +111,8 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
             const tradeTokenIn = tokenInAddress ? await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: tokenInAddress }) : null;
             const tradeTokenOut = tokenOutAddress ? await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: tokenOutAddress }) : null;
 
+            const { start, end } = await getTransactionStartAndEndTime(trx.hash().toString('hex'));
+
             const transaction = {
                 hash: trx.hash().toString('hex'),
                 pool: address,
@@ -98,8 +123,8 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
                 reserveIn: reserveIn.toString(),
                 reserveOut: reserveOut.toString(),
                 block: block.seqno,
-                timestamp: startTimestamp,
-                endTimestamp: endTimestamp,
+                timestamp: start,
+                endTimestamp: end,
                 contractName: 'stonfi' as const,
                 sender: sender.toString(),
                 receiver: inMessage.info.dest?.toString(),
@@ -142,11 +167,7 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
             continue;
         }
 
-        const startTimestamp = 'createdAt' in inMessage.info ? inMessage.info.createdAt : trx.now;
-
         const outMessages = trx.outMessages.values();
-        const lastOutMessage = _.last(outMessages);
-        const endTimestamp = lastOutMessage ? ('createdAt' in lastOutMessage.info ? lastOutMessage.info.createdAt : undefined) : undefined;
 
         for (const outMessage of outMessages) {
             const slice = outMessage.body.beginParse();
@@ -172,6 +193,7 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
             const reserveIn = payload.reserve0.grams;
             const reserveOut = payload.reserve1.grams;
 
+            const { start, end } = await getTransactionStartAndEndTime(trx.hash().toString('hex'));
 
             const transaction = {
                 hash: trx.hash().toString('hex'),
@@ -183,8 +205,8 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
                 reserveIn: reserveIn.toString(),
                 reserveOut: reserveOut.toString(),
                 block: block.seqno,
-                timestamp: startTimestamp,
-                endTimestamp: endTimestamp,
+                timestamp: start,
+                endTimestamp: end,
                 contractName: 'dedust' as const,
                 sender: sender.toString(),
                 receiver: inMessage.info.dest?.toString(),
@@ -229,9 +251,6 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
 
         const outMessages = trx.outMessages.values();
 
-        const lastOutMessage = _.last(outMessages);
-        const endTimestamp = lastOutMessage ? ('createdAt' in lastOutMessage.info ? lastOutMessage.info.createdAt : undefined) : undefined;
-
         for (const outMessage of outMessages) {
             const slice = outMessage.body.beginParse();
 
@@ -256,6 +275,8 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
             const reserveIn = payload.reserves.reserve_in;
             const reserveOut = payload.reserves.reserve_out;
 
+            const { start, end } = await getTransactionStartAndEndTime(trx.hash().toString('hex'));
+
             const transaction = {
                 hash: trx.hash().toString('hex'),
                 pool: address,
@@ -266,8 +287,8 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
                 reserveIn: reserveIn.toString(),
                 reserveOut: reserveOut.toString(),
                 block: block.seqno,
-                timestamp: trx.now,
-                endTimestamp: endTimestamp,
+                timestamp: start,
+                endTimestamp: end,
                 contractName: 'utyab' as const,
                 sender: sender.toString(),
                 receiver: inMessage.info.dest?.toString(),
@@ -287,15 +308,17 @@ export const parseBlockTransactions = internalAction({
         const processingTasks = pools.map(pool => {
             switch (pool.contractName) {
                 case 'stonfi':
-                    return processStonFiPool(ctx, {
-                        address: pool.address,
-                        block: lastBlock
-                    });
+                    // return processStonFiPool(ctx, {
+                    //     address: pool.address,
+                    //     block: lastBlock
+                    // });
+                    return Promise.resolve();
                 case 'dedust':
-                    return processDedustPool(ctx, {
-                        address: pool.address,
-                        block: lastBlock
-                    });
+                    // return processDedustPool(ctx, {
+                    //     address: pool.address,
+                    //     block: lastBlock
+                    // });
+                    return Promise.resolve();
                 case 'utyab':
                     return processUtyabPool(ctx, {
                         address: pool.address,

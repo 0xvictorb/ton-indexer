@@ -111,20 +111,21 @@ export const getTradesByContractName = query({
         contractName: v.union(v.literal("stonfi"), v.literal("dedust"), v.literal("utyab")),
         secret: v.string(),
         from: v.optional(v.number()),
-        to: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
         if (args.secret !== process.env.SECRET) {
             throw new ConvexError("Unauthorized");
         }
 
+        console.log('args', args);
+
         const trades = await ctx.db.query("trades")
-            .withIndex("by_contract_and_timestamp", (q) => 
-                q.eq('contractName', args.contractName)
-                    .gte('timestamp', args.from ?? 0)
-                    .lte('timestamp', args.to ?? Date.now())
+            .withIndex("by_contractName", (q) => 
+                q.eq('contractName', args.contractName).gte('_creationTime', args.from ?? 0)
             )
             .collect();
+
+        console.log('trades', trades);
 
         const tradesWithTokens = await Promise.all(trades.map(async (trade) => {
             const tokenIn = trade.tokenIn ? await ctx.db.get(trade.tokenIn) : null;
