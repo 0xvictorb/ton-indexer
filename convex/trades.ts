@@ -102,6 +102,8 @@ export const list = query({
             return { ...trade, tokenIn, tokenOut };
         }));
 
+        tradesWithTokens.sort((a, b) => args.order === "asc" ? a.timestamp - b.timestamp : b.timestamp - a.timestamp);
+
         return { ...pagination, page: tradesWithTokens };
     },
 });
