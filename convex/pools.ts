@@ -25,6 +25,10 @@ export const create = mutation({
       throw new ConvexError("Unauthorized");
     }
 
-    await ctx.db.insert("pools", args);
+    await ctx.db.insert("pools", {
+      name: args.name,
+      address: args.address,
+      contractName: args.contractName,
+    });
   },
 });
