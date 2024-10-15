@@ -33,6 +33,7 @@ export default defineSchema({
         receiver: v.optional(v.string()),
         fee: v.optional(v.string()),
         endTimestamp: v.optional(v.number()),
+        status: v.optional(v.union(v.literal('success'), v.literal('failed'), v.literal('pending'), v.literal('unknown'))),
     })
         .index('by_hash', ['hash'])
         .index('by_contractName', ['contractName'])

@@ -12,6 +12,23 @@ import { tonClient } from '@/ton-client';
 
 const TON_ADDRESS = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c';
 
+
+const findStatus = (obj: any): boolean => {
+    if (typeof obj === 'object') {
+        for (const key in obj) {
+            if (key === 'success') {
+                return Boolean(obj[key]);
+            } else if (typeof obj[key] === 'object') {
+                const result = findStatus(obj[key]);
+                if (result === false) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+};
+
 const getTransactionBasicInfo = async (hash: string) => {
     const traces = await fetch(`https://tonapi.io/v2/traces/${hash}`);
     const tracesJson = await traces.json();
@@ -29,12 +46,15 @@ const getTransactionBasicInfo = async (hash: string) => {
         }
     };
     findCreatedAt(tracesJson);
+    const isSuccess = findStatus(tracesJson);
+
     createdAtDates.sort((a, b) => a - b);
     const filteredCreatedAtDates = createdAtDates.filter(Boolean);
     return {
         start: filteredCreatedAtDates[0],
         end: filteredCreatedAtDates[filteredCreatedAtDates.length - 1],
         from: tracesJson.transaction.account.address,
+        status: isSuccess ? 'success' : 'failed',
     };
 }
 
@@ -70,8 +90,6 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
         if (!inMessage || !(inMessage.info.src instanceof Address) || !inMessage.body) {
             continue;
         }
-
-        const sender = inMessage.info.src;
 
         const outMessages = trx.outMessages.values();
         const swapMessage = inMessage;
@@ -112,7 +130,7 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
             const tradeTokenIn = tokenInAddress ? await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: tokenInAddress }) : null;
             const tradeTokenOut = tokenOutAddress ? await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: tokenOutAddress }) : null;
 
-            const { start, end } = await getTransactionBasicInfo(trx.hash().toString('hex'));
+            const { start, end, from, status } = await getTransactionBasicInfo(trx.hash().toString('hex'));
 
             const transaction = {
                 hash: trx.hash().toString('hex'),
@@ -127,9 +145,10 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
                 timestamp: start,
                 endTimestamp: end,
                 contractName: 'stonfi' as const,
-                sender: sender.toString(),
+                sender: from,
                 receiver: inMessage.info.dest?.toString(),
                 fee: trx.totalFees.coins.toString(),
+                status,
             };
 
             await ctx.runMutation(internal.trades.createTrade, transaction);
@@ -194,7 +213,7 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
             const reserveIn = payload.reserve0.grams;
             const reserveOut = payload.reserve1.grams;
 
-            const { start, end } = await getTransactionBasicInfo(trx.hash().toString('hex'));
+            const { start, end, from, status } = await getTransactionBasicInfo(trx.hash().toString('hex'));
 
             const transaction = {
                 hash: trx.hash().toString('hex'),
@@ -209,9 +228,10 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
                 timestamp: start,
                 endTimestamp: end,
                 contractName: 'dedust' as const,
-                sender: sender.toString(),
+                sender: from,
                 receiver: inMessage.info.dest?.toString(),
                 fee: trx.totalFees.coins.toString(),
+                status,
             };
 
             await ctx.runMutation(internal.trades.createTrade, transaction);
@@ -276,7 +296,7 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
             const reserveIn = payload.reserves.reserve_in;
             const reserveOut = payload.reserves.reserve_out;
 
-            const { start, end } = await getTransactionBasicInfo(trx.hash().toString('hex'));
+            const { start, end, from, status } = await getTransactionBasicInfo(trx.hash().toString('hex'));
 
             const transaction = {
                 hash: trx.hash().toString('hex'),
@@ -291,9 +311,10 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
                 timestamp: start,
                 endTimestamp: end,
                 contractName: 'utyab' as const,
-                sender: sender.toString(),
+                sender: from,
                 receiver: inMessage.info.dest?.toString(),
                 fee: trx.totalFees.coins.toString(),
+                status,
             };
 
             await ctx.runMutation(internal.trades.createTrade, transaction);
