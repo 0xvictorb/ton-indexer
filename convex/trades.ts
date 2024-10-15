@@ -20,6 +20,7 @@ export const createTrade = internalMutation({
         receiver: v.optional(v.string()),
         fee: v.optional(v.string()),
         endTimestamp: v.optional(v.number()),
+        status: v.optional(v.union(v.literal('success'), v.literal('failed'), v.literal('pending'), v.literal('unknown'))),
     },
     handler: async (ctx, args) => {
         const existingTrade = await ctx.db.query("trades").withIndex("by_hash", (q) => q.eq('hash', args.hash)).first();
@@ -44,6 +45,7 @@ export const createTrade = internalMutation({
             reserveOut: args.reserveOut,
             fee: args.fee,
             endTimestamp: args.endTimestamp,
+            status: args.status,
         });
 
         return tradeId;

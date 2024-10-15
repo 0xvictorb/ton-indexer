@@ -54,7 +54,7 @@ const getTransactionBasicInfo = async (hash: string) => {
         start: filteredCreatedAtDates[0],
         end: filteredCreatedAtDates[filteredCreatedAtDates.length - 1],
         from: tracesJson.transaction.account.address,
-        status: isSuccess ? 'success' : 'failed',
+        status: isSuccess ? 'success' as const : 'failed' as const,
     };
 }
 
