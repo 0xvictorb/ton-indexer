@@ -11,6 +11,7 @@ import { loadSwapEvent, type SwapEvent } from '@/abi/utyab';
 import { tonClient } from '@/ton-client';
 
 const TON_ADDRESS = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c';
+const TX_LIMIT = 10;
 
 // Cache for token addresses
 const tokenAddressCache = new Map<string, string>();
@@ -92,7 +93,7 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
         Address.parse(address),
         ltState,
         hashState,
-        20
+        TX_LIMIT
     );
 
     const transactions: Transaction[] = [];
@@ -180,7 +181,7 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
     const transactionsRaw = await tonClient.getAccountTransactions(
         Address.parse(address),
         ltState,
-        hashState, 20);
+        hashState, TX_LIMIT);
 
     const transactions: Transaction[] = [];
     for (const trx of Cell.fromBoc(transactionsRaw.transactions)) {
@@ -263,7 +264,7 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
     const transactionsRaw = await tonClient.getAccountTransactions(
         Address.parse(address),
         ltState,
-        hashState, 20);
+        hashState, TX_LIMIT);
 
     const transactions: Transaction[] = Cell.fromBoc(transactionsRaw.transactions)
         .map(trx => loadTransaction(trx.beginParse()));
