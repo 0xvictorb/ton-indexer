@@ -317,13 +317,13 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
                 reserveIn: payload.reserves.reserve_in.toString(),
                 reserveOut: payload.reserves.reserve_out.toString(),
                 block: block.seqno,
-                timestamp: transactionInfo.start,
+                timestamp: transactionInfo.start ?? trx.now,
                 endTimestamp: transactionInfo.end,
                 contractName: 'utyab' as const,
                 sender: transactionInfo.from ?? sender.toString(),
                 receiver: inMessage.info.dest?.toString(),
                 fee: trx.totalFees.coins.toString(),
-                status: transactionInfo.status,
+                status: transactionInfo.status ?? 'unknown',
             };
         }
         return null;
