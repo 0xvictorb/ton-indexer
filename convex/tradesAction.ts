@@ -92,7 +92,7 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
         Address.parse(address),
         ltState,
         hashState,
-        100
+        20
     );
 
     const transactions: Transaction[] = [];
@@ -180,7 +180,7 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
     const transactionsRaw = await tonClient.getAccountTransactions(
         Address.parse(address),
         ltState,
-        hashState, 100);
+        hashState, 20);
 
     const transactions: Transaction[] = [];
     for (const trx of Cell.fromBoc(transactionsRaw.transactions)) {
@@ -263,7 +263,7 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
     const transactionsRaw = await tonClient.getAccountTransactions(
         Address.parse(address),
         ltState,
-        hashState, 100);
+        hashState, 20);
 
     const transactions: Transaction[] = Cell.fromBoc(transactionsRaw.transactions)
         .map(trx => loadTransaction(trx.beginParse()));
@@ -285,11 +285,13 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
             try {
                 payload = loadSwapEvent(slice) as SwapEvent;
             } catch (error) {
-                console.log('SKIP: not a swap event');
                 continue;
             }
 
-            console.log('process swap event', trx.hash().toString('hex'));
+            const existingTrade = await ctx.runQuery(internal.trades._get, { hash: trx.hash().toString('hex') });
+            if (existingTrade) continue;
+
+            console.log('NEW SWAP EVENT:', trx.hash().toString('hex'));
 
             const assetIn = payload.asset_in;
             const assetOut = payload.asset_out;

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation, query } from "./_generated/server";
+import { internalMutation, query, internalQuery } from "./_generated/server";
 import { ConvexError } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { internal } from "./_generated/api";
@@ -168,5 +168,14 @@ export const getTradesByContractName = query({
         }));
 
         return tradesWithTokens;
+    },
+});
+
+export const _get = internalQuery({
+    args: {
+        hash: v.string(),
+    },
+    handler: async (ctx, args) => {
+        return await ctx.db.query("trades").withIndex("by_hash", (q) => q.eq("hash", args.hash)).first();
     },
 });
