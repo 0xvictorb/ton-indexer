@@ -2,6 +2,36 @@ import { v } from "convex/values";
 import { internalMutation, query } from "./_generated/server";
 import { ConvexError } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
+import { internal } from "./_generated/api";
+
+export const createTrades = internalMutation({
+    args: {
+        trades: v.array(v.object({
+            hash: v.string(),
+            pool: v.string(),
+            tokenIn: v.optional(v.id("tradeTokens")),
+            tokenOut: v.optional(v.id("tradeTokens")),
+            amountIn: v.string(),
+            amountOut: v.string(),
+            reserveIn: v.string(),
+            reserveOut: v.string(),
+            block: v.number(),
+            timestamp: v.number(),
+            contractName: v.union(v.literal("stonfi"), v.literal("dedust"), v.literal("utyab")),
+            sender: v.string(),
+            receiver: v.optional(v.string()),
+            fee: v.optional(v.string()),
+            endTimestamp: v.optional(v.number()),
+            status: v.optional(v.union(v.literal('success'), v.literal('failed'), v.literal('pending'), v.literal('unknown'))),
+        })),
+    },
+    handler: async (ctx, args) => {
+        await Promise.all(
+            args.trades.map(trade => ctx.runMutation(internal.trades.createTrade, trade))
+        );
+    },
+});
+
 
 export const createTrade = internalMutation({
     args: {
@@ -80,7 +110,7 @@ export const list = query({
 
         let tradesQuery;
         if (args.contractName) {
-            tradesQuery = ctx.db.query("trades").withIndex("by_contractName", (q) => 
+            tradesQuery = ctx.db.query("trades").withIndex("by_contractName", (q) =>
                 q.eq("contractName", args.contractName!)
             );
         } else {
@@ -124,7 +154,7 @@ export const getTradesByContractName = query({
         console.log('args', args);
 
         const trades = await ctx.db.query("trades")
-            .withIndex("by_contractName", (q) => 
+            .withIndex("by_contractName", (q) =>
                 q.eq('contractName', args.contractName).gte('_creationTime', args.from ?? 0)
             )
             .collect();

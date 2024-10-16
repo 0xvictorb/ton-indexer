@@ -12,6 +12,21 @@ import { tonClient } from '@/ton-client';
 
 const TON_ADDRESS = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c';
 
+// Cache for token addresses
+const tokenAddressCache = new Map<string, string>();
+
+
+async function getOrCreateTradeToken(ctx: ActionCtx, address: string): Promise<string> {
+    const cachedToken = tokenAddressCache.get(address);
+    if (cachedToken) return cachedToken;
+
+    const token = await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address });
+    if (token) {
+        tokenAddressCache.set(address, token._id);
+        return token._id;
+    }
+    return '';
+}
 
 const findStatus = (obj: any): boolean => {
     if (typeof obj === 'object') {
@@ -53,7 +68,7 @@ const getTransactionBasicInfo = async (hash: string) => {
     return {
         start: filteredCreatedAtDates[0],
         end: filteredCreatedAtDates[filteredCreatedAtDates.length - 1],
-        from: tracesJson.transaction.account.address,
+        from: tracesJson.transaction?.account?.address,
         status: isSuccess ? 'success' as const : 'failed' as const,
     };
 }
@@ -92,6 +107,7 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
         }
 
         const outMessages = trx.outMessages.values();
+        const sender = inMessage.info.src;
         const swapMessage = inMessage;
         const paymentMessage = _.nth(outMessages, 1);
 
@@ -145,7 +161,7 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
                 timestamp: start,
                 endTimestamp: end,
                 contractName: 'stonfi' as const,
-                sender: from,
+                sender: from ?? sender.toString(),
                 receiver: inMessage.info.dest?.toString(),
                 fee: trx.totalFees.coins.toString(),
                 status,
@@ -228,7 +244,7 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
                 timestamp: start,
                 endTimestamp: end,
                 contractName: 'dedust' as const,
-                sender: from,
+                sender: from ?? sender.toString(),
                 receiver: inMessage.info.dest?.toString(),
                 fee: trx.totalFees.coins.toString(),
                 status,
@@ -249,28 +265,18 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
         ltState,
         hashState, 100);
 
-    const transactions: Transaction[] = [];
-    for (const trx of Cell.fromBoc(transactionsRaw.transactions)) {
-        transactions.push(loadTransaction(trx.beginParse()));
-    }
+    const transactions: Transaction[] = Cell.fromBoc(transactionsRaw.transactions)
+        .map(trx => loadTransaction(trx.beginParse()));
 
-    for (const trx of transactions) {
+
+    const tradePromises = transactions.map(async (trx) => {
         const inMessage = trx.inMessage;
-        if (!inMessage) {
-            continue;
-        }
-
-        const sender = inMessage.info.src;
-        if (!(sender instanceof Address)) {
-            continue;
-        }
-
-        const cellInMessage = inMessage.body;
-        if (cellInMessage === undefined) {
-            continue;
+        if (!inMessage || !(inMessage.info.src instanceof Address) || !inMessage.body) {
+            return null;
         }
 
         const outMessages = trx.outMessages.values();
+        const sender = inMessage.info.src;
 
         for (const outMessage of outMessages) {
             const slice = outMessage.body.beginParse();
@@ -289,36 +295,38 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
             const addressInAddress = assetIn.type === 1 ? uint256ToRawAddress(assetIn.address!.toString()) : TON_ADDRESS;
             const addressOutAddress = assetOut.type === 1 ? uint256ToRawAddress(assetOut.address!.toString()) : TON_ADDRESS;
 
-            const tradeTokenIn = await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: addressInAddress });
-            const tradeTokenOut = await ctx.runAction(internal.tradeTokensAction.getOrCreateTradeToken, { address: addressOutAddress });
-            const amountIn = payload.amount_in;
-            const amountOut = payload.amount_out;
-            const reserveIn = payload.reserves.reserve_in;
-            const reserveOut = payload.reserves.reserve_out;
+            const [tradeTokenIn, tradeTokenOut, transactionInfo] = await Promise.all([
+                getOrCreateTradeToken(ctx, addressInAddress),
+                getOrCreateTradeToken(ctx, addressOutAddress),
+                getTransactionBasicInfo(trx.hash().toString('hex'))
+            ]);
 
-            const { start, end, from, status } = await getTransactionBasicInfo(trx.hash().toString('hex'));
-
-            const transaction = {
+            return {
                 hash: trx.hash().toString('hex'),
                 pool: address,
-                tokenIn: tradeTokenIn?._id,
-                tokenOut: tradeTokenOut?._id,
-                amountIn: amountIn.toString(),
-                amountOut: amountOut.toString(),
-                reserveIn: reserveIn.toString(),
-                reserveOut: reserveOut.toString(),
+                tokenIn: tradeTokenIn,
+                tokenOut: tradeTokenOut,
+                amountIn: payload.amount_in.toString(),
+                amountOut: payload.amount_out.toString(),
+                reserveIn: payload.reserves.reserve_in.toString(),
+                reserveOut: payload.reserves.reserve_out.toString(),
                 block: block.seqno,
-                timestamp: start,
-                endTimestamp: end,
+                timestamp: transactionInfo.start,
+                endTimestamp: transactionInfo.end,
                 contractName: 'utyab' as const,
-                sender: from,
+                sender: transactionInfo.from ?? sender.toString(),
                 receiver: inMessage.info.dest?.toString(),
                 fee: trx.totalFees.coins.toString(),
-                status,
+                status: transactionInfo.status,
             };
-
-            await ctx.runMutation(internal.trades.createTrade, transaction);
         }
+        return null;
+    });
+
+    const trades = (await Promise.all(tradePromises)).filter(trade => trade !== null);
+
+    if (trades.length > 0) {
+        await ctx.runMutation(internal.trades.createTrades, { trades: trades as any });
     }
 };
 
