@@ -122,7 +122,7 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
                 payloadSwap = loadInternalMsgBody(sliceSwap) as InternalMsgBody_swap;
                 payloadPayment = loadInternalMsgBody(slicePayment) as InternalMsgBody_pay_to;
             } catch (error) {
-                console.log('SKIP: not a swap event', { hash: trx.hash().toString('hex') });
+                console.log('SKIP: not a swap event');
                 continue;
             }
 
@@ -285,9 +285,11 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
             try {
                 payload = loadSwapEvent(slice) as SwapEvent;
             } catch (error) {
-                console.log('SKIP: not a swap event', trx.hash().toString('hex'));
+                console.log('SKIP: not a swap event');
                 continue;
             }
+
+            console.log('process swap event', trx.hash().toString('hex'));
 
             const assetIn = payload.asset_in;
             const assetOut = payload.asset_out;
