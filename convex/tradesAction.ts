@@ -46,6 +46,7 @@ const findStatus = (obj: any): boolean => {
 };
 
 const getTransactionBasicInfo = async (hash: string) => {
+    console.log('getTransactionBasicInfo', hash);
     const traces = await fetch(`https://tonapi.io/v2/traces/${hash}`);
     const tracesJson = await traces.json();
 

@@ -151,15 +151,11 @@ export const getTradesByContractName = query({
             throw new ConvexError("Unauthorized");
         }
 
-        console.log('args', args);
-
         const trades = await ctx.db.query("trades")
             .withIndex("by_contractName", (q) =>
                 q.eq('contractName', args.contractName).gte('_creationTime', args.from ?? 0)
             )
             .collect();
-
-        console.log('trades', trades);
 
         const tradesWithTokens = await Promise.all(trades.map(async (trade) => {
             const tokenIn = trade.tokenIn ? await ctx.db.get(trade.tokenIn) : null;
