@@ -39,7 +39,6 @@ export const getOrCreateTradeToken = internalAction({
     handler: async (ctx, args): Promise<Doc<'tradeTokens'> | null> => {
         const { address } = args;
         const rawAddress = Address.parse(address).toRawString();
-        console.log('rawAddress', rawAddress, address);
         const tradeToken: Doc<'tradeTokens'> | null = await ctx.runQuery(internal.tradeTokens.get, { address: rawAddress });
 
         if (tradeToken) {
@@ -48,8 +47,6 @@ export const getOrCreateTradeToken = internalAction({
 
         const jettonInfoResponse = await fetch(`https://tonapi.io/v2/jettons/${address}`);
         const jettonInfo = (await jettonInfoResponse.json()) as JettonOffchainInfo;
-
-        console.log('jettonInfo', jettonInfo);
 
         await ctx.runMutation(internal.tradeTokens.create, {
             address: rawAddress,
