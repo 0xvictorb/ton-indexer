@@ -163,8 +163,8 @@ export const processStonFiPool = async (ctx: ActionCtx, { address, block }: { ad
                 timestamp: start,
                 endTimestamp: end,
                 contractName: 'stonfi' as const,
-                sender: from ?? sender.toString(),
-                receiver: inMessage.info.dest?.toString(),
+                sender: from ?? sender.toRawString(),
+                receiver: (inMessage.info.dest as Address)?.toRawString(),
                 fee: trx.totalFees.coins.toString(),
                 status,
             };
@@ -246,8 +246,8 @@ export const processDedustPool = async (ctx: ActionCtx, { address, block }: { ad
                 timestamp: start,
                 endTimestamp: end,
                 contractName: 'dedust' as const,
-                sender: from ?? sender.toString(),
-                receiver: inMessage.info.dest?.toString(),
+                sender: from ?? sender.toRawString(),
+                receiver: (inMessage.info.dest as Address)?.toRawString(),
                 fee: trx.totalFees.coins.toString(),
                 status,
             };
@@ -320,8 +320,8 @@ export const processUtyabPool = async (ctx: ActionCtx, { address, block }: { add
                 timestamp: transactionInfo.start ?? trx.now,
                 endTimestamp: transactionInfo.end,
                 contractName: 'utyab' as const,
-                sender: transactionInfo.from ?? sender.toString(),
-                receiver: inMessage.info.dest?.toString(),
+                sender: transactionInfo.from ?? sender.toRawString(),
+                receiver: (inMessage.info.dest as Address)?.toRawString(),
                 fee: trx.totalFees.coins.toString(),
                 status: transactionInfo.status ?? 'unknown',
             };
